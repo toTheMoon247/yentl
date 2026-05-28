@@ -21,6 +21,14 @@ As a result, users often feel that dating apps are designed to maximize profit a
 
 ---
 
+## Positioning
+
+Yentl is for the broad dating market — positioned directly against Tinder and Hinge as **the app that actually gets you matched**.
+
+The promise is outcome-based, not lifestyle-based: users come to Yentl because other apps haven't delivered real matches, and they want one that will.
+
+---
+
 ## Solution
 
 Build a dating platform focused on creating real matches and real dates.
@@ -35,10 +43,12 @@ If both users confirm:
 
 * The match becomes a confirmed date.
 
-If one user rejects or ignores the date:
+If one user rejects **or ignores** the date (no response within 24 hours):
 
 * That user moves lower in the matchmaking queue.
 * The user who was rejected keeps high priority and is matched again.
+
+Ignoring a match is treated the same as rejecting it. This keeps the system simple and rewards users who show up for the people they've matched with.
 
 This system rewards people who are serious about dating while ensuring that active users are not endlessly ignored.
 
@@ -66,7 +76,26 @@ Instead of:
 
 ---
 
-## MVP Features
+## Business Model
+
+Yentl charges a **per-confirmed-date fee**: the platform is free to use until a date is mutually confirmed by both users, at which point a fee is collected.
+
+This aligns revenue directly with the outcome Yentl exists to deliver — real dates — and avoids the pattern of paywalling features that don't actually produce results.
+
+Open questions to resolve before launch:
+
+* Who pays the fee — one side, both, or split
+* The fee amount
+* How to discourage "confirm-then-ghost" behavior intended to game the system
+* Refund or dispute policy when a confirmed date doesn't happen
+
+---
+
+## MVP Scope
+
+### Audience
+
+* Heterosexual matching only at MVP. Same-sex and broader orientation support is deferred to a later release.
 
 ### User Features
 
