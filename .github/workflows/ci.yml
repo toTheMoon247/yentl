@@ -42,7 +42,8 @@ jobs:
             -target Yentl \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO
 
   ios-yentl-matchmaker:
     name: Yentl Matchmaker iOS App
@@ -62,7 +63,8 @@ jobs:
             -target YentlMatchmaker \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO
 
   swiftlint:
     name: SwiftLint
