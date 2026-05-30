@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0E31696E2FCB975400E0D195 /* YentlShared in Frameworks */ = {isa = PBXBuildFile; productRef = 0E31696D2FCB975400E0D195 /* YentlShared */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0E3169262FCB462700E0D195 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E31696E2FCB975400E0D195 /* YentlShared in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = YentlMatchmaker;
 			packageProductDependencies = (
+				0E31696D2FCB975400E0D195 /* YentlShared */,
 			);
 			productName = YentlMatchmaker;
 			productReference = 0E3169182FCB462500E0D195 /* YentlMatchmaker.app */;
@@ -209,7 +215,7 @@
 			mainGroup = 0E31690F2FCB462500E0D195;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0E3169422FCB46C800E0D195 /* XCLocalSwiftPackageReference "../../shared" */,
+				0E31696C2FCB975400E0D195 /* XCLocalSwiftPackageReference "../../shared" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E3169192FCB462500E0D195 /* Products */;
@@ -594,11 +600,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0E3169422FCB46C800E0D195 /* XCLocalSwiftPackageReference "../../shared" */ = {
+		0E31696C2FCB975400E0D195 /* XCLocalSwiftPackageReference "../../shared" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../shared;
 		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0E31696D2FCB975400E0D195 /* YentlShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = YentlShared;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0E3169102FCB462500E0D195 /* Project object */;
 }

@@ -2,16 +2,18 @@
 //  YentlApp.swift
 //  Yentl
 //
-//  Created by My laptop on 30/05/2026.
-//
 
 import SwiftUI
+import YentlShared
 
 @main
 struct YentlApp: App {
+    @State private var auth = AuthService.shared
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(auth)
         }
     }
 }

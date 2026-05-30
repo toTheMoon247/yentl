@@ -2,16 +2,18 @@
 //  YentlMatchmakerApp.swift
 //  YentlMatchmaker
 //
-//  Created by My laptop on 30/05/2026.
-//
 
 import SwiftUI
+import YentlShared
 
 @main
 struct YentlMatchmakerApp: App {
+    @State private var auth = AuthService.shared
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(auth)
         }
     }
 }

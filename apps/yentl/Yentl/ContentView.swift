@@ -2,23 +2,49 @@
 //  ContentView.swift
 //  Yentl
 //
-//  Created by My laptop on 30/05/2026.
-//
 
 import SwiftUI
+import YentlShared
 
+/// Root of the Yentl consumer app — routes on `AuthService.state`.
 struct ContentView: View {
+    @Environment(AuthService.self) private var auth
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        switch auth.state {
+        case .loading:
+            ProgressView()
+        case .signedOut:
+            YentlAuthFlow(config: .yentl)
+        case .signedIn:
+            SignedInHomeView()
         }
-        .padding()
+    }
+}
+
+/// Placeholder home for signed-in users. Replaced with real content in Phase 2.
+private struct SignedInHomeView: View {
+    @Environment(AuthService.self) private var auth
+
+    var body: some View {
+        VStack(spacing: DesignTokens.Spacing.lg) {
+            Spacer()
+            Text("Welcome to Yentl")
+                .font(DesignTokens.Typography.titleLarge)
+            Text("You're signed in. Phase 2 work goes here.")
+                .font(DesignTokens.Typography.body)
+                .foregroundStyle(DesignTokens.Palette.textSecondary)
+            Spacer()
+            Button("Sign out") {
+                Task { try? await auth.signOut() }
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(DesignTokens.Spacing.xl)
     }
 }
 
 #Preview {
     ContentView()
+        .environment(AuthService.shared)
 }
