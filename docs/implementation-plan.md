@@ -34,16 +34,16 @@ This plan breaks Yentl's MVP into small, sequenced tasks grouped by phase. Each 
 
 Goal: a clean, deployable skeleton for both iOS apps and the backend, with CI in place.
 
-- [ ] Create Supabase project (dev) and capture connection details
-- [ ] Set up Apple developer assets (App IDs, certificates, provisioning) for both apps
-- [ ] Initialize the Yentl Xcode project (SwiftUI, iOS 17+ target)
-- [ ] Initialize the Yentl Matchmaker Xcode project (SwiftUI, iOS 17+ target)
-- [ ] Create a shared Swift package for models, API client, and shared utilities
-- [ ] Configure SwiftLint and a basic CI pipeline (build + lint on PR) for both apps
-- [ ] Set up environment configuration (dev / staging / prod) for both apps and Supabase
-- [ ] Create a design tokens file (colors, typography, spacing) shared between both apps
+- [ ] Create Supabase project (dev) and capture connection details *(deferred to Phase 1)*
+- [ ] Set up Apple developer assets (App IDs, certificates, provisioning) for both apps *(deferred until TestFlight)*
+- [x] Initialize the Yentl Xcode project (SwiftUI, iOS 17+ target)
+- [x] Initialize the Yentl Matchmaker Xcode project (SwiftUI, iOS 17+ target)
+- [x] Create a shared Swift package for models, API client, and shared utilities (`shared/`, library `YentlShared`)
+- [x] Configure SwiftLint and a basic CI pipeline (build + lint on PR) for both apps (`.swiftlint.yml`, `.github/workflows/ci.yml`; iOS jobs use `xcodebuild -target` to avoid shared-scheme dependency)
+- [x] Set up environment configuration (dev / staging / prod) for both apps and Supabase (`AppEnvironment` enum in `YentlShared` reads `YENTL_ENV` from Info.plist; URLs/keys wired up alongside Supabase in Phase 1)
+- [x] Create a design tokens file (colors, typography, spacing) shared between both apps (`DesignTokens.swift` in `YentlShared` — placeholders pending real design)
 
-Exit: both apps build, run on simulator, hit a "hello" endpoint on Supabase, CI is green.
+Exit: both apps build, run on simulator, hit a "hello" endpoint on Supabase, CI is green. *Currently: both apps build and run on the simulator locally; CI is wired but not yet observed green on a real PR; the Supabase "hello" check is moved to Phase 1 along with the Supabase project itself.*
 
 ---
 
