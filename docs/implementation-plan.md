@@ -10,7 +10,7 @@ This plan breaks Yentl's MVP into small, sequenced tasks grouped by phase. Each 
 | 1     | Auth — Apple/Google for users, allow-listed login for matchmakers |
 | 2     | Profile creation + storage (photos, bio, hidden fields) |
 | 3     | Profile approval (mocked for MVP) |
-| 4     | Discovery + likes in the Dating App |
+| 4     | Discovery + likes in Yentl |
 | 5     | **Decision Panel** — the core matchmaker UX |
 | 6     | Match creation + 24h confirmation + queue updates |
 | 7     | Chat (Stream) |
@@ -23,8 +23,8 @@ This plan breaks Yentl's MVP into small, sequenced tasks grouped by phase. Each 
 
 ## Conventions
 
-- "Dating App" = the iOS app users see.
-- "Yentl App" = the iOS app matchmakers use.
+- "Yentl" = the iOS app users see (the public consumer app).
+- "Yentl Matchmaker" = the iOS app matchmakers use (internal only).
 - "Backend" = Supabase (Postgres + Auth + Storage + Edge Functions).
 - Open decisions are tagged **(OPEN)** and need answers before the task can ship.
 
@@ -36,8 +36,8 @@ Goal: a clean, deployable skeleton for both iOS apps and the backend, with CI in
 
 - [ ] Create Supabase project (dev) and capture connection details
 - [ ] Set up Apple developer assets (App IDs, certificates, provisioning) for both apps
-- [ ] Initialize the Dating App Xcode project (SwiftUI, iOS 17+ target)
-- [ ] Initialize the Yentl App Xcode project (SwiftUI, iOS 17+ target)
+- [ ] Initialize the Yentl Xcode project (SwiftUI, iOS 17+ target)
+- [ ] Initialize the Yentl Matchmaker Xcode project (SwiftUI, iOS 17+ target)
 - [ ] Create a shared Swift package for models, API client, and shared utilities
 - [ ] Configure SwiftLint and a basic CI pipeline (build + lint on PR) for both apps
 - [ ] Set up environment configuration (dev / staging / prod) for both apps and Supabase
@@ -51,14 +51,14 @@ Exit: both apps build, run on simulator, hit a "hello" endpoint on Supabase, CI 
 
 Goal: users and matchmakers can sign up, log in, and stay logged in across launches.
 
-### Dating App
+### Yentl
 - [ ] Onboarding screens — welcome, privacy, terms acceptance
 - [ ] Apple Sign-In flow + Supabase Auth handshake
 - [ ] Google Sign-In flow + Supabase Auth handshake
 - [ ] Persistent session handling and logout
 - [ ] Account state model (logged out / no profile / profile pending / profile live / rejected)
 
-### Yentl App
+### Yentl Matchmaker
 - [ ] Email + password sign-in for matchmakers (allow-listed accounts only)
 - [ ] Role-based access check on app launch (block non-matchmakers)
 - [ ] Logout
@@ -68,7 +68,7 @@ Goal: users and matchmakers can sign up, log in, and stay logged in across launc
 - [ ] Row Level Security policies on `users`
 - [ ] Matchmaker invitation flow (admin creates matchmaker account)
 
-Exit: a fresh install can sign up via Apple or Google; a fresh Yentl App install can log in with a pre-provisioned matchmaker account.
+Exit: a fresh install can sign up via Apple or Google; a fresh Yentl Matchmaker install can log in with a pre-provisioned matchmaker account.
 
 ---
 
@@ -76,7 +76,7 @@ Exit: a fresh install can sign up via Apple or Google; a fresh Yentl App install
 
 Goal: users can complete a profile with photos, bio, prompts, and the hidden matchmaker fields.
 
-### Dating App
+### Yentl
 - [ ] Profile creation wizard — basics (name, DOB, gender — male/female only at MVP, location)
 - [ ] Photo upload UI (multi-photo, reorder, delete)
 - [ ] Bio and prompts entry
@@ -92,10 +92,10 @@ Goal: users can complete a profile with photos, bio, prompts, and the hidden mat
 - [ ] Image resize / variant generation on upload (thumb, medium, full)
 - [ ] Photo deletion + storage cleanup
 
-### Yentl App
-- [ ] Profile viewer (mirrors the Dating App profile view, plus hidden matchmaker fields)
+### Yentl Matchmaker
+- [ ] Profile viewer (mirrors Yentl's profile view, plus hidden matchmaker fields)
 
-Exit: a user can build a full profile in the Dating App; a matchmaker can open that profile in the Yentl App and see both public + hidden fields.
+Exit: a user can build a full profile in Yentl; a matchmaker can open that profile in Yentl Matchmaker and see both public + hidden fields.
 
 ---
 
@@ -107,10 +107,10 @@ Goal: get profiles live immediately during MVP so the team can iterate on Phases
 - [ ] `profile_review_state` enum and column kept in schema (`draft / pending_ai / pending_review / live / rejected`), but new profiles auto-transition to `live` on completion
 - [ ] Feature flag `profile_approval_enabled` (default `false` for MVP; flipped on in Phase 12)
 
-### Dating App
+### Yentl
 - [ ] Profile goes live immediately on completion — no "under review" state during MVP
 
-### Yentl App
+### Yentl Matchmaker
 - [ ] None (approval queue UI deferred to Phase 12)
 
 Note: matchmaker-assigned attractiveness rating originally lived here. It moves to Phase 5 (first Decision Panel encounter).
@@ -119,11 +119,11 @@ Exit: a new user completes their profile and it appears live in the system witho
 
 ---
 
-## Phase 4 — Discovery & Likes (Dating App side)
+## Phase 4 — Discovery & Likes (Yentl side)
 
 Goal: users can swipe on each other and accumulate "likes received". No matches yet — that comes from the matchmaker.
 
-### Dating App
+### Yentl
 - [ ] Discovery stack screen (card swiper, photos, basic info)
 - [ ] Profile detail view from the stack
 - [ ] Like / pass actions
@@ -152,7 +152,7 @@ Goal: the core differentiating UX. Matchmakers see users at the front of the que
 - [ ] Percentile calculation jobs (nightly or on-demand)
 - [ ] Internal notes table (per user, audit-trailed)
 
-### Yentl App
+### Yentl Matchmaker
 - [ ] Decision Panel — top section (pinned user with hidden fields)
 - [ ] Decision Panel — bottom section (candidate viewer)
 - [ ] Candidate ordering: users who already liked the pinned user first
@@ -179,13 +179,13 @@ Goal: a matchmaker creates a match, both users see it, the 24-hour clock starts,
 - [ ] Queue updates on outcome (drop rejecting/ignoring user, return other to front)
 - [ ] Match history per user
 
-### Dating App
+### Yentl
 - [ ] Incoming match notification UI
 - [ ] Match detail screen (other user's full profile + accept / reject buttons + countdown)
 - [ ] Accept / reject actions
 - [ ] Outcome screens (confirmed, expired, rejected by the other side)
 
-### Yentl App
+### Yentl Matchmaker
 - [ ] Match creation confirm-step from Decision Panel
 - [ ] Match history view per user
 - [ ] Recent matches dashboard
@@ -200,7 +200,7 @@ Goal: confirmed matches get a private chat channel.
 
 - [ ] Stream Chat integration (auth tokens issued by a Supabase edge function)
 - [ ] Channel creation on match confirmation
-- [ ] In-app chat UI (Dating App)
+- [ ] In-app chat UI (Yentl)
 - [ ] Chat list / inbox screen
 - [ ] Read receipts and typing indicators (Stream native)
 - [ ] Block / report in chat
@@ -254,12 +254,12 @@ Goal: matchmakers can boost a user from the Decision Panel; boosted user's visib
 - [ ] **(OPEN)** Daily / weekly boost budget per matchmaker
 - [ ] **(OPEN)** Max active boosts per user
 
-### Yentl App
+### Yentl Matchmaker
 - [ ] Boost action in Decision Panel
 - [ ] Boost confirmation modal with rationale text
 - [ ] Boost history per user
 
-### Dating App
+### Yentl
 - [ ] No visible UI — boost is silent to users
 
 Exit: matchmaker boosts a user, that user's likes-received accelerates, threshold triggers re-entry to the queue.
@@ -270,9 +270,9 @@ Exit: matchmaker boosts a user, that user's likes-received accelerates, threshol
 
 Goal: ship-safe basics. Some items here can be pulled forward and run alongside earlier phases.
 
-- [ ] In-app reporting flow (Dating App): report a profile, report a message
+- [ ] In-app reporting flow (Yentl): report a profile, report a message
 - [ ] Block another user
-- [ ] Yentl App moderation queue for reports
+- [ ] Yentl Matchmaker moderation queue for reports
 - [ ] Bans and soft suspensions
 - [ ] Sentry integration in both apps (crashes)
 - [ ] PostHog (or similar) integration for funnel analytics
@@ -298,12 +298,12 @@ Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a h
 - [ ] Approval transition logic with audit trail (who, when, why)
 - [ ] Flip `profile_approval_enabled` flag to `true`
 
-### Yentl App
+### Yentl Matchmaker
 - [ ] Approval queue list view (sorted by submission time)
 - [ ] Approval detail screen — full profile + AI flags + approve / reject buttons
 - [ ] Rejection reason entry (free text + canned reasons)
 
-### Dating App
+### Yentl
 - [ ] "Profile under review" state UI
 - [ ] "Profile rejected" state UI with reason and edit-and-resubmit flow
 
@@ -322,7 +322,7 @@ Exit: every new profile goes through AI + matchmaker review before going live; e
 - [ ] Iterate on Decision Panel UX based on matchmaker feedback
 - [ ] Calibrate attractiveness rating across matchmakers
 - [ ] Public TestFlight beta
-- [ ] App Store submission (Dating App + Yentl App as separate entries)
+- [ ] App Store submission (Yentl + Yentl Matchmaker as separate entries)
 - [ ] Launch in one city
 
 Exit: live in the App Store, first paying date completed.

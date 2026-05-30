@@ -2,8 +2,8 @@
 
 | Layer              | Technology                     |
 | ------------------ | ------------------------------ |
-| Dating App         | Swift + SwiftUI                |
-| Yentl App          | Swift + SwiftUI                |
+| Yentl              | Swift + SwiftUI                |
+| Yentl Matchmaker   | Swift + SwiftUI                |
 | Backend            | Supabase                       |
 | Database           | PostgreSQL (via Supabase)      |
 | Authentication     | Google Sign-In + Apple Sign-In |

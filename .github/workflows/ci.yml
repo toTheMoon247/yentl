@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  shared-package:
+    name: Shared Swift Package
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Swift version
+        run: swift --version
+      - name: Build
+        working-directory: shared
+        run: swift build
+      - name: Test
+        working-directory: shared
+        run: swift test
