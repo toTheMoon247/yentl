@@ -57,6 +57,7 @@ Non-obvious choices recorded across the docs:
 - **Attractiveness rating is matchmaker-assigned**, not algorithmic, and is captured on first Decision Panel encounter (Phase 5) rather than at approval — because Phase 3 is mocked.
 - **MVP is heterosexual matching only**; the queue alternates M/F. Same-sex support is deferred.
 - The Profile Approval Workflow step was renamed from "Yentl Review" → **"Matchmaker Review"** to avoid clashing with the consumer app name.
+- **Apple Developer Program enrollment is deferred until Phase 8** (Push Notifications). Apple Sign-In is implemented as a stub button in Phase 1; Google Sign-In is the only working auth path until the Dev account is active. Remind the user to enroll *before* starting Phase 8 — APNs keys require the paid program.
 
 ## Git and commit conventions
 

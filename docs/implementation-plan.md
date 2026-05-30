@@ -59,16 +59,18 @@ Goal: users and matchmakers can sign up, log in, and stay logged in across launc
 - [ ] Account state model (logged out / no profile / profile pending / profile live / rejected)
 
 ### Yentl Matchmaker
-- [ ] Email + password sign-in for matchmakers (allow-listed accounts only)
-- [ ] Role-based access check on app launch (block non-matchmakers)
+- [ ] Apple Sign-In and Google Sign-In (same providers as Yentl — matchmakers authenticate the same way consumers do)
+- [ ] Role-based access check on app launch — block users whose `public.users.role` is not `matchmaker` or `admin` (show an "access pending" screen)
 - [ ] Logout
 
 ### Backend
-- [ ] `users` table with role column (`user` / `matchmaker` / `admin`)
-- [ ] Row Level Security policies on `users`
-- [ ] Matchmaker invitation flow (admin creates matchmaker account)
+- [x] `users` table with role column (`user` / `matchmaker` / `admin`) — migration `20260530202003_users_table_and_rls.sql`
+- [x] Row Level Security policies on `users` — same migration
+- [ ] Matchmaker promotion flow — admin promotes a user's role from `user` to `matchmaker` in `public.users` (initially via Supabase Studio SQL; admin UI built later)
 
-Exit: a fresh install can sign up via Apple or Google; a fresh Yentl Matchmaker install can log in with a pre-provisioned matchmaker account.
+Exit: a fresh install of either app can sign up via Apple or Google; the Matchmaker app then gates access on the `role` column — non-matchmakers see an "access pending" state until promoted by an admin.
+
+Auth method note: Apple + Google only. Email/password is intentionally not supported. App Store Review Guideline 4.8 requires Sign in with Apple when offering Google sign-in, so both ship together; Apple sign-in is blocked on getting an Apple Developer account.
 
 ---
 
@@ -211,6 +213,9 @@ Exit: two test users who both confirm a match can chat in real time.
 ---
 
 ## Phase 8 — Notifications
+
+> ⚠️ **Blocker before this phase: enroll in the Apple Developer Program ($99/yr) at developer.apple.com/programs.**
+> Phases 1–7 are buildable without it. Phase 8 needs an APNs key from Apple Developer Portal (paid program only), and enrolling here also unlocks (a) replacing the Apple Sign-In stub from Phase 1 with the real flow, and (b) StoreKit / App Store Connect work for Phase 9. Enrollment usually takes <24h.
 
 Goal: users and matchmakers get the right pushes at the right times.
 
