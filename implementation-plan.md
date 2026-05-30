@@ -2,6 +2,25 @@
 
 This plan breaks Yentl's MVP into small, sequenced tasks grouped by phase. Each phase has a clear exit criterion. Phases are mostly sequential — later phases assume earlier ones are done.
 
+## Quick Map
+
+| Phase | What ships |
+| ----- | ---------- |
+| 0     | Foundations — two iOS skeletons + Supabase + CI |
+| 1     | Auth — Apple/Google for users, allow-listed login for matchmakers |
+| 2     | Profile creation + storage (photos, bio, hidden fields) |
+| 3     | Profile approval (mocked for MVP) |
+| 4     | Discovery + likes in the Dating App |
+| 5     | **Decision Panel** — the core matchmaker UX |
+| 6     | Match creation + 24h confirmation + queue updates |
+| 7     | Chat (Stream) |
+| 8     | Push notifications (OneSignal) |
+| 9     | Apple IAP per-confirmed-date fee |
+| 10    | Boost mechanic |
+| 11    | Safety, moderation, observability |
+| 12    | Profile approval pipeline (full) — launch gate |
+| 13    | Beta + launch in one city |
+
 ## Conventions
 
 - "Dating App" = the iOS app users see.
