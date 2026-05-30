@@ -10,8 +10,16 @@ let package = Package(
     products: [
         .library(name: "YentlShared", targets: ["YentlShared"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/supabase/supabase-swift.git", from: "2.0.0"),
+    ],
     targets: [
-        .target(name: "YentlShared"),
+        .target(
+            name: "YentlShared",
+            dependencies: [
+                .product(name: "Supabase", package: "supabase-swift"),
+            ]
+        ),
         .testTarget(name: "YentlSharedTests", dependencies: ["YentlShared"]),
     ]
 )
