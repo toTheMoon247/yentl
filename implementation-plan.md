@@ -80,28 +80,23 @@ Exit: a user can build a full profile in the Dating App; a matchmaker can open t
 
 ---
 
-## Phase 3 — Profile Approval Pipeline
+## Phase 3 — Profile Approval (Mocked for MVP)
 
-Goal: every new profile goes through AI screening + matchmaker approval before going live.
+Goal: get profiles live immediately during MVP so the team can iterate on Phases 4–10 without an approval bottleneck. The full pipeline ships in Phase 12, before any outside-user beta and App Store submission.
 
 ### Backend
-- [ ] `profile_review_state` enum and column (`draft / pending_ai / pending_review / live / rejected`)
-- [ ] AI screening edge function: photos through moderation API (NSFW, faces present, single person)
-- [ ] AI screening edge function: text through moderation (slurs, profanity, contact info)
-- [ ] AI verdict storage with reasons
-- [ ] Approval transition logic with audit trail (who, when, why)
-
-### Yentl App
-- [ ] Approval queue list view (sorted by submission time)
-- [ ] Approval detail screen — full profile + AI flags + approve / reject buttons
-- [ ] Rejection reason entry (free text + canned reasons)
-- [ ] Initial attractiveness rating UI (matchmaker assigns at approval; used in Phase 5)
+- [ ] `profile_review_state` enum and column kept in schema (`draft / pending_ai / pending_review / live / rejected`), but new profiles auto-transition to `live` on completion
+- [ ] Feature flag `profile_approval_enabled` (default `false` for MVP; flipped on in Phase 12)
 
 ### Dating App
-- [ ] "Profile under review" state UI
-- [ ] "Profile rejected" state UI with reason and edit-and-resubmit flow
+- [ ] Profile goes live immediately on completion — no "under review" state during MVP
 
-Exit: a brand-new user finishes their profile, the AI screens it, a matchmaker approves it, and the user sees their profile go live.
+### Yentl App
+- [ ] None (approval queue UI deferred to Phase 12)
+
+Note: matchmaker-assigned attractiveness rating originally lived here. It moves to Phase 5 (first Decision Panel encounter).
+
+Exit: a new user completes their profile and it appears live in the system without any approval step.
 
 ---
 
@@ -147,6 +142,7 @@ Goal: the core differentiating UX. Matchmakers see users at the front of the que
 - [ ] Compatibility indicator visuals (bars or heatmap)
 - [ ] Internal notes editor on pinned user
 - [ ] "Skip user" action (advance queue without matching or boosting)
+- [ ] First-encounter attractiveness rating prompt — the first matchmaker to pin a user is prompted to assign a rating; the rating then persists and is reused by other matchmakers (moved here from Phase 3 because of the MVP mock)
 
 Exit: a matchmaker can pull up a queued user and browse candidates in the Decision Panel layout exactly as specified in scope.
 
@@ -272,7 +268,34 @@ Exit: ready to submit both apps to the App Store with safety, legal, and observa
 
 ---
 
-## Phase 12 — Beta & Launch
+## Phase 12 — Profile Approval Pipeline (Full)
+
+Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a hard gate before any outside-user beta and before App Store submission — Apple reviewers check UGC moderation, and you need at least photo AI screening live before any untrusted user uploads content.
+
+### Backend
+- [ ] AI screening edge function: photos through moderation API (NSFW, faces present, single person)
+- [ ] AI screening edge function: text through moderation (slurs, profanity, contact info)
+- [ ] AI verdict storage with reasons
+- [ ] Approval transition logic with audit trail (who, when, why)
+- [ ] Flip `profile_approval_enabled` flag to `true`
+
+### Yentl App
+- [ ] Approval queue list view (sorted by submission time)
+- [ ] Approval detail screen — full profile + AI flags + approve / reject buttons
+- [ ] Rejection reason entry (free text + canned reasons)
+
+### Dating App
+- [ ] "Profile under review" state UI
+- [ ] "Profile rejected" state UI with reason and edit-and-resubmit flow
+
+### Data migration
+- [ ] Retroactively run every profile created during MVP through the new approval flow before opening to outside users
+
+Exit: every new profile goes through AI + matchmaker review before going live; existing profiles have been retroactively reviewed; App Store submission is unblocked.
+
+---
+
+## Phase 13 — Beta & Launch
 
 - [ ] Internal alpha — team only, on TestFlight
 - [ ] Onboard ~3 matchmakers for closed beta
