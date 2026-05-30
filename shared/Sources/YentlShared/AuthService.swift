@@ -41,6 +41,13 @@ public enum AuthError: LocalizedError {
 public final class AuthService {
     public private(set) var state: AuthState = .loading
 
+    /// Convenience: the signed-in user's id as a String, or nil when signed out.
+    /// Exposed so the host apps don't need to import the Supabase `Auth` submodule.
+    public var currentUserIDString: String? {
+        if case .signedIn(let user) = state { return user.id.uuidString }
+        return nil
+    }
+
     public static let shared = AuthService()
 
     private init() {
