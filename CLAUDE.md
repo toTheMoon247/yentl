@@ -64,3 +64,11 @@ Non-obvious choices recorded across the docs:
 - Default branch is `main`. Pushing files under `.github/workflows/` requires a `gh` token with the `workflow` scope (already granted to this user).
 - The user reviews history actively and has previously asked to split a commit retroactively — prefer small, single-purpose commits and confirm before force-pushing.
 - End commit messages with a `Co-Authored-By:` line for the assisting model (e.g. `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`).
+
+## Milestone-based versioning
+
+When the project reaches a **significant, tested checkpoint** (e.g. Google OAuth complete, Authentication complete, Onboarding complete, Profile Creation complete), create an **annotated, semver pre-1.0 Git tag** (`v0.MINOR.0`; `v1.0.0` is reserved for App Store launch) and add a short, newest-first entry to `RELEASES.md`. See that file for the full conventions.
+
+- Tag **only verified states**: CI green on the tagged commit *and* the milestone's behavior exercised (built/run or validated end-to-end).
+- **Major milestones only** — routine commits, refactors, and CI tweaks do not get tagged or logged.
+- These tags are the project's rollback points; the goal is always having a clear last-known-good state to return to.
