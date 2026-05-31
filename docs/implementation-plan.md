@@ -54,19 +54,19 @@ Goal: users and matchmakers can sign up, log in, and stay logged in across launc
 ### Yentl
 - [ ] Onboarding screens — welcome, privacy, terms acceptance
 - [ ] Apple Sign-In flow + Supabase Auth handshake
-- [ ] Google Sign-In flow + Supabase Auth handshake
+- [x] Google Sign-In flow + Supabase Auth handshake — validated end-to-end in the simulator
 - [ ] Persistent session handling and logout
 - [ ] Account state model (logged out / no profile / profile pending / profile live / rejected)
 
 ### Yentl Matchmaker
-- [ ] Apple Sign-In and Google Sign-In (same providers as Yentl — matchmakers authenticate the same way consumers do)
-- [ ] Role-based access check on app launch — block users whose `public.users.role` is not `matchmaker` or `admin` (show an "access pending" screen)
+- [x] Google Sign-In + Supabase Auth handshake — validated end-to-end; Apple Sign-In remains a stub until Phase 8 (Apple Developer enrollment)
+- [x] Role-based access check on app launch — validated: `user` role sees Access Pending; promoting to `matchmaker`/`admin` routes to `MatchmakerHomeView`
 - [ ] Logout
 
 ### Backend
 - [x] `users` table with role column (`user` / `matchmaker` / `admin`) — migration `20260530202003_users_table_and_rls.sql`
 - [x] Row Level Security policies on `users` — same migration
-- [ ] Matchmaker promotion flow — admin promotes a user's role from `user` to `matchmaker` in `public.users` (initially via Supabase Studio SQL; admin UI built later)
+- [x] Matchmaker promotion flow — admin promotes a user's role from `user` to `matchmaker` in `public.users` (via Supabase Studio SQL for MVP; admin UI built later) — validated
 
 Exit: a fresh install of either app can sign up via Apple or Google; the Matchmaker app then gates access on the `role` column — non-matchmakers see an "access pending" state until promoted by an admin.
 
