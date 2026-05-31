@@ -24,8 +24,6 @@ struct ContentView: View {
 
 /// Placeholder home for signed-in users. Replaced with real content in Phase 2.
 private struct SignedInHomeView: View {
-    @Environment(AuthService.self) private var auth
-
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
             Spacer()
@@ -35,10 +33,7 @@ private struct SignedInHomeView: View {
                 .font(DesignTokens.Typography.body)
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
             Spacer()
-            Button("Sign out") {
-                Task { try? await auth.signOut() }
-            }
-            .buttonStyle(.bordered)
+            SignOutButton()
         }
         .padding(DesignTokens.Spacing.xl)
     }

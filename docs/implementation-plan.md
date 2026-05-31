@@ -55,13 +55,13 @@ Goal: users and matchmakers can sign up, log in, and stay logged in across launc
 - [ ] Onboarding screens — welcome, privacy, terms acceptance
 - [ ] Apple Sign-In flow + Supabase Auth handshake
 - [x] Google Sign-In flow + Supabase Auth handshake — validated end-to-end in the simulator
-- [ ] Persistent session handling and logout
+- [x] Persistent session handling and logout — session persists in the Keychain across launches (auto-refresh on); shared `SignOutButton` wired into the signed-in home
 - [ ] Account state model (logged out / no profile / profile pending / profile live / rejected)
 
 ### Yentl Matchmaker
 - [x] Google Sign-In + Supabase Auth handshake — validated end-to-end; Apple Sign-In remains a stub until Phase 8 (Apple Developer enrollment)
 - [x] Role-based access check on app launch — validated: `user` role sees Access Pending; promoting to `matchmaker`/`admin` routes to `MatchmakerHomeView`
-- [ ] Logout
+- [x] Logout — shared `SignOutButton` on both the staff home and Access Pending screens
 
 ### Backend
 - [x] `users` table with role column (`user` / `matchmaker` / `admin`) — migration `20260530202003_users_table_and_rls.sql`

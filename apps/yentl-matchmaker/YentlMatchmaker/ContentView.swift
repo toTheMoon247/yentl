@@ -62,8 +62,6 @@ struct ContentView: View {
 /// Placeholder home for staff users. Replaced with the Decision Panel and
 /// matchmaker workflows in Phase 5.
 private struct MatchmakerHomeView: View {
-    @Environment(AuthService.self) private var auth
-
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
             Spacer()
@@ -74,10 +72,7 @@ private struct MatchmakerHomeView: View {
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
             Spacer()
-            Button("Sign out") {
-                Task { try? await auth.signOut() }
-            }
-            .buttonStyle(.bordered)
+            SignOutButton()
         }
         .padding(DesignTokens.Spacing.xl)
     }
@@ -85,8 +80,6 @@ private struct MatchmakerHomeView: View {
 
 /// Shown to signed-in users whose role is `user` (not yet promoted).
 private struct AccessPendingView: View {
-    @Environment(AuthService.self) private var auth
-
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
             Spacer()
@@ -100,10 +93,7 @@ private struct AccessPendingView: View {
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
             Spacer()
-            Button("Sign out") {
-                Task { try? await auth.signOut() }
-            }
-            .buttonStyle(.bordered)
+            SignOutButton()
         }
         .padding(DesignTokens.Spacing.xl)
     }
