@@ -182,12 +182,14 @@ public final class AuthService {
     private struct UserRoleRow: Decodable {
         let role: UserRole
     }
+}
 
-    private struct OnboardingRow: Decodable {
-        let onboardingCompletedAt: String?
+/// Row shape for the onboarding-status query. File-scoped (rather than nested
+/// in `AuthService`) so its `CodingKeys` doesn't trip SwiftLint's nesting rule.
+private struct OnboardingRow: Decodable {
+    let onboardingCompletedAt: String?
 
-        enum CodingKeys: String, CodingKey {
-            case onboardingCompletedAt = "onboarding_completed_at"
-        }
+    enum CodingKeys: String, CodingKey {
+        case onboardingCompletedAt = "onboarding_completed_at"
     }
 }

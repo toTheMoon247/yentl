@@ -81,7 +81,12 @@ struct OnboardingFlow: View {
             Text("Your privacy")
                 .font(DesignTokens.Typography.titleMedium)
                 .multilineTextAlignment(.center)
-            Text("Your profile is reviewed by Yentl's professional matchmakers to make thoughtful introductions. We only share your profile with potential matches — never sold to advertisers. You're in control and can sign out any time.")
+            Text(
+                "Your profile is reviewed by Yentl's professional matchmakers "
+                + "to make thoughtful introductions. We only share your profile "
+                + "with potential matches — never sold to advertisers. You're in "
+                + "control and can sign out any time."
+            )
                 .font(DesignTokens.Typography.body)
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
