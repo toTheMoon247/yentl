@@ -33,6 +33,29 @@ commit it points at.
 
 ---
 
+## v0.2.0 — Onboarding (2026-06-01)
+
+Post-sign-in onboarding for the Yentl consumer app, validated end-to-end in the
+simulator; CI green on all jobs.
+
+- After first Google sign-in, signed-in users pass through a one-time onboarding
+  gate before the home screen: **Welcome → privacy note → terms/consent + 18+
+  confirmation** (both toggles required to continue).
+- Consent is recorded **server-side, account-scoped** (not device-local):
+  migration `20260601202049_onboarding_fields.sql` adds `terms_accepted_at`,
+  `age_confirmed_at`, and `onboarding_completed_at` to `public.users`, plus a
+  `security definer` `complete_onboarding()` RPC that stamps them for
+  `auth.uid()` only (no self-UPDATE RLS policy, so role escalation stays
+  impossible by construction).
+- `AuthService.isOnboardingComplete()` / `completeOnboarding()`; Yentl
+  `ContentView` routes through `OnboardingFlow` until completion, mirroring the
+  Matchmaker role-gate pattern.
+- Verified persistence: relaunching after completion routes straight to home.
+
+Not included (tracked for later): full Terms of Service / Privacy Policy pages
+and stricter age verification (Phase 11); onboarding gate for the Matchmaker app
+(staff-only, not needed yet).
+
 ## v0.1.0 — Authentication (2026-05-31)
 
 First known-good checkpoint. The authentication system is complete and verified
