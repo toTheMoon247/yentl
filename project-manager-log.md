@@ -83,3 +83,37 @@ Process:
 - Decide the **account state model** (logged out / no profile / pending / live / rejected) — likely fold into Phase 2/3 since the profile states don't exist yet.
 - Then start **Phase 2** (profile creation + storage): `profiles` / `profile_photos` tables, Storage bucket + RLS, and the profile creation wizard.
 - Spin up a **sub-agent to produce a plain-language codebase walkthrough** — it should traverse the repo and explain, in simple words, what each part does (the two apps, `YentlShared`, the Supabase migration/config, CI). Output a readable doc (e.g. `docs/codebase-overview.md`) aimed at someone new to the project.
+
+---
+
+## Day 3 — 2026-06-01 → 2026-06-02
+
+**Today.** Shipped the onboarding flow (closing the buildable Phase 1 work), tagged **`v0.2.0 — Onboarding`**, ran a codebase walkthrough via a new sub-agent, and fixed a commit-attribution problem that turned out to affect the whole history.
+
+Codebase walkthrough:
+
+- Created a `codebase-onboarding-guide` sub-agent and had it produce a structured, plain-language tour of the repo (architecture, `YentlShared` file-by-file, both apps' routing, the migration + RLS, CI). Verified against the actual files. Not yet saved as `docs/codebase-overview.md` — still on the task list.
+
+Phase 1 — onboarding flow (consumer app):
+
+- Decided the shape with the user: **post-auth** gate (sign in first, then onboard), **server-side** persistence (account-scoped, not device-local).
+- Flow: **Welcome → privacy note → terms/consent + 18+ confirmation** (both toggles required to continue). Shown once, when `onboarding_completed_at` is null.
+- Migration `20260601202049_onboarding_fields.sql`: adds `terms_accepted_at` / `age_confirmed_at` / `onboarding_completed_at` to `public.users`, plus a `security definer` `complete_onboarding()` RPC that stamps them for `auth.uid()` only. Chose the RPC over a self-UPDATE RLS policy specifically so role escalation stays impossible by construction.
+- `AuthService.isOnboardingComplete()` / `completeOnboarding()`; Yentl `ContentView` routes through `OnboardingFlow`, mirroring the Matchmaker role-gate pattern. Validated end-to-end in the simulator, including the persistence check (relaunch → straight to home).
+- Caught and fixed two SwiftLint violations (a 238-char line; a 2-level-deep `CodingKeys` nesting) — CI is strict, so the over-long line was a hard failure, not a warning.
+- Tagged **`v0.2.0 — Onboarding`** on a confirmed-green commit; added the `RELEASES.md` entry.
+
+Commit attribution — fixed across all history:
+
+- Spotted that git had **no configured identity** (neither global nor local), so commits were authored by an auto-generated `My laptop <…@Mys-MacBook-Air.local>`. GitHub linked **none** of them to the account; a few early commits also leaked a personal gmail address.
+- Set the global identity to the GitHub **noreply** form (`72319044+toTheMoon247@users.noreply.github.com`), then rewrote author+committer on **every** commit to it (uniform attribution + scrubbed the gmail), recreated `v0.1.0` with the right tagger, created `v0.2.0`, and force-pushed `main` + tags.
+- Verified via the GitHub API: every commit on `main` now resolves to `toTheMoon247`, **0 unlinked**. CI green on the rewritten HEAD. (One-time history rewrite + force-push; fine for a solo repo, but any other clone would need a re-fetch/reset.)
+
+**Progress.** **Phase 1 is effectively done** — auth, role gate, session/logout, and onboarding are all built and verified, with `v0.1.0` and `v0.2.0` as clean rollback points and a fully attributed history. Remaining Phase 1 loose end is the formal account-state model, which we agreed to fold into Phase 2/3.
+
+**Steps for tomorrow.**
+
+- Save the sub-agent's codebase walkthrough as `docs/codebase-overview.md` (and keep it current as Phase 2 lands).
+- Start **Phase 2 — profile creation + storage**: `profiles` / `profile_photos` table schema (public + hidden matchmaker fields), Supabase Storage bucket + RLS, and the profile creation wizard in the Yentl app.
+- Settle the open Phase 2 question: are height/income required at signup or optional?
+- Fold the **account-state model** (logged out / no profile / pending / live / rejected) into the Phase 2 schema work now that profile states are about to exist.
