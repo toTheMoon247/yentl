@@ -113,6 +113,45 @@ public final class AuthService {
         }
     }
 
+    // MARK: - Onboarding
+
+    /// Whether the signed-in user has finished the post-sign-in onboarding
+    /// flow (welcome + privacy + terms/consent + 18+). Backed by
+    /// `public.users.onboarding_completed_at`. Requires a signed-in session.
+    public func isOnboardingComplete() async throws -> Bool {
+        guard case .signedIn(let user) = state else {
+            throw AuthError.notSignedIn
+        }
+        do {
+            let row: OnboardingRow = try await Backend.supabase
+                .from("users")
+                .select("onboarding_completed_at")
+                .eq("id", value: user.id)
+                .single()
+                .execute()
+                .value
+            return row.onboardingCompletedAt != nil
+        } catch {
+            throw AuthError.unexpected(error)
+        }
+    }
+
+    /// Records the user's onboarding consent server-side via the
+    /// `complete_onboarding` RPC (stamps terms / 18+ / completion timestamps
+    /// for the calling user). Requires a signed-in session.
+    public func completeOnboarding() async throws {
+        guard case .signedIn = state else {
+            throw AuthError.notSignedIn
+        }
+        do {
+            try await Backend.supabase
+                .rpc("complete_onboarding")
+                .execute()
+        } catch {
+            throw AuthError.unexpected(error)
+        }
+    }
+
     // MARK: - Private
 
     /// Hydrates initial state then listens for changes from Supabase Auth.
@@ -142,5 +181,13 @@ public final class AuthService {
 
     private struct UserRoleRow: Decodable {
         let role: UserRole
+    }
+
+    private struct OnboardingRow: Decodable {
+        let onboardingCompletedAt: String?
+
+        enum CodingKeys: String, CodingKey {
+            case onboardingCompletedAt = "onboarding_completed_at"
+        }
     }
 }
