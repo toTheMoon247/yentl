@@ -2,10 +2,9 @@
 //  DiscoveryView.swift
 //  Yentl
 //
-//  The discovery stack: shows one live candidate at a time (public profile via
-//  the shared PublicProfileCard) with Pass / Like actions. Swipes are recorded
-//  but never surfaced back to the user. Slice 1 is a simple one-at-a-time card
-//  with buttons; richer card/gesture and empty-state polish come in Slice 2.
+//  The discovery stack: shows one live candidate at a time as a draggable
+//  SwipeCard (drag or use the buttons to like/pass; tap to open full detail).
+//  Swipes are recorded but never surfaced back to the user.
 //
 
 import SwiftUI
@@ -21,6 +20,7 @@ struct DiscoveryView: View {
     @State private var prompts: [ProfilePrompt] = []
     @State private var isLoading = true
     @State private var isActing = false
+    @State private var showingDetail = false
     @State private var errorMessage: String?
 
     private var current: Profile? {
@@ -34,6 +34,19 @@ struct DiscoveryView: View {
         }
         .task { await loadFeed() }
         .task(id: current?.id) { await loadCandidateMedia() }
+        .sheet(isPresented: $showingDetail) {
+            if let current {
+                CandidateDetailView(
+                    profile: current,
+                    photoURLs: photoURLs,
+                    prompts: prompts,
+                    onAction: { action in
+                        showingDetail = false
+                        Task { await act(action) }
+                    }
+                )
+            }
+        }
     }
 
     @ViewBuilder
@@ -48,12 +61,19 @@ struct DiscoveryView: View {
                 action: ("Try again", { Task { await loadFeed() } })
             )
         } else if let current {
-            VStack(spacing: 0) {
-                ScrollView {
-                    PublicProfileCard(profile: current, photoURLs: photoURLs, prompts: prompts)
-                }
+            VStack(spacing: DesignTokens.Spacing.md) {
+                SwipeCard(
+                    profile: current,
+                    photoURL: photoURLs.first,
+                    onSwipe: { action in Task { await act(action) } },
+                    onTap: { showingDetail = true }
+                )
+                .id(current.id)
+                .padding(.horizontal, DesignTokens.Spacing.md)
+
                 actionBar
             }
+            .padding(.bottom, DesignTokens.Spacing.md)
         } else {
             messageState(
                 icon: "sparkles",
@@ -66,25 +86,14 @@ struct DiscoveryView: View {
 
     private var actionBar: some View {
         HStack(spacing: DesignTokens.Spacing.xl) {
-            actionButton(systemName: "xmark", tint: .secondary) {
+            CircleActionButton(systemName: "xmark", tint: .secondary) {
                 Task { await act(.pass) }
             }
-            actionButton(systemName: "heart.fill", tint: .pink) {
+            CircleActionButton(systemName: "heart.fill", tint: .pink) {
                 Task { await act(.like) }
             }
         }
-        .padding(.vertical, DesignTokens.Spacing.md)
         .disabled(isActing)
-    }
-
-    private func actionButton(systemName: String, tint: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 64, height: 64)
-                .background(.thinMaterial, in: Circle())
-        }
     }
 
     private func messageState(
@@ -152,6 +161,59 @@ struct DiscoveryView: View {
             index += 1
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+/// Full profile detail shown when a discovery card is tapped, with the same
+/// like/pass actions at the bottom.
+private struct CandidateDetailView: View {
+    let profile: Profile
+    let photoURLs: [URL]
+    let prompts: [ProfilePrompt]
+    let onAction: (SwipeAction) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ScrollView {
+                    PublicProfileCard(profile: profile, photoURLs: photoURLs, prompts: prompts)
+                }
+                HStack(spacing: DesignTokens.Spacing.xl) {
+                    CircleActionButton(systemName: "xmark", tint: .secondary) {
+                        onAction(.pass)
+                    }
+                    CircleActionButton(systemName: "heart.fill", tint: .pink) {
+                        onAction(.like)
+                    }
+                }
+                .padding(.vertical, DesignTokens.Spacing.md)
+            }
+            .navigationTitle(profile.displayName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+private struct CircleActionButton: View {
+    let systemName: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 64, height: 64)
+                .background(.thinMaterial, in: Circle())
         }
     }
 }
