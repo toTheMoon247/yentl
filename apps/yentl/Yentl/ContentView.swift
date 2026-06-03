@@ -6,11 +6,21 @@
 import SwiftUI
 import YentlShared
 
+/// The signed-in user's place in the account lifecycle. Drives which screen
+/// the consumer app shows after authentication. (Pending / rejected states
+/// arrive with the Phase 3/12 profile-approval work.)
+private enum AccountStage {
+    case needsOnboarding
+    case needsProfile
+    case ready
+}
+
 /// Root of the Yentl consumer app — routes on `AuthService.state`, then on
-/// whether the signed-in user has completed onboarding.
+/// the signed-in user's account stage (onboarding → profile → ready).
 struct ContentView: View {
     @Environment(AuthService.self) private var auth
-    @State private var onboarded: Bool?
+    @Environment(ProfileService.self) private var profiles
+    @State private var stage: AccountStage?
     @State private var statusError: String?
 
     var body: some View {
@@ -19,49 +29,60 @@ struct ContentView: View {
             ProgressView()
         case .signedOut:
             YentlAuthFlow(config: .yentl)
-                .onAppear { onboarded = nil; statusError = nil }
+                .onAppear { stage = nil; statusError = nil }
         case .signedIn:
             signedInContent
-                .task(id: signedInUserID) { await loadStatus() }
+                .task(id: signedInUserID) { await loadStage() }
         }
     }
 
-    /// Stable identity for `.task(id:)` so the onboarding check re-runs when
-    /// the signed-in user changes (sign out → sign in as someone else).
+    /// Stable identity for `.task(id:)` so the stage check re-runs when the
+    /// signed-in user changes (sign out → sign in as someone else).
     private var signedInUserID: String {
         auth.currentUserIDString ?? ""
     }
 
     @ViewBuilder
     private var signedInContent: some View {
-        if let isOnboarded = onboarded {
-            if isOnboarded {
+        if let stage {
+            switch stage {
+            case .needsOnboarding:
+                OnboardingFlow(onComplete: { Task { await loadStage() } })
+            case .needsProfile:
+                ProfileWizard(onComplete: { Task { await loadStage() } })
+            case .ready:
                 SignedInHomeView()
-            } else {
-                OnboardingFlow(onComplete: { onboarded = true })
             }
         } else if let statusError {
-            OnboardingStatusErrorView(message: statusError) {
-                Task { await loadStatus() }
+            AccountStageErrorView(message: statusError) {
+                Task { await loadStage() }
             }
         } else {
             ProgressView("Getting things ready…")
         }
     }
 
-    private func loadStatus() async {
+    private func loadStage() async {
         statusError = nil
+        stage = nil
         do {
-            onboarded = try await auth.isOnboardingComplete()
+            guard try await auth.isOnboardingComplete() else {
+                stage = .needsOnboarding
+                return
+            }
+            guard try await profiles.isProfileComplete() else {
+                stage = .needsProfile
+                return
+            }
+            stage = .ready
         } catch {
-            onboarded = nil
             statusError = error.localizedDescription
         }
     }
 }
 
-/// Shown when the post-sign-in onboarding check fails (e.g. network error).
-private struct OnboardingStatusErrorView: View {
+/// Shown when resolving the account stage fails (e.g. network error).
+private struct AccountStageErrorView: View {
     let message: String
     let retry: () -> Void
 
@@ -103,4 +124,5 @@ private struct SignedInHomeView: View {
 #Preview {
     ContentView()
         .environment(AuthService.shared)
+        .environment(ProfileService.shared)
 }
