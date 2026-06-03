@@ -1,73 +1,105 @@
 #!/usr/bin/env bash
 #
-# Dev-only: upload local photos to seeded profiles' storage using the
-# authenticated Supabase CLI session (no service_role key needed).
+# Dev-only: upload local photos to the profile-photos bucket and attach one to
+# each seeded profile, so the seeded discovery cards show real images.
 #
-# Two steps:
-#   1. In the Studio SQL editor, run supabase/dev/seed_photo_rows.sql. It creates
-#      the profile_photos rows and shows a manifest. Export that result as CSV
-#      (Export -> CSV), e.g. to ~/Desktop/manifest.csv.
-#   2. Run this script with the photos folder and that CSV:
-#        ./supabase/dev/upload_seed_photos.sh "/path/to/script photos" ~/Desktop/manifest.csv
+# Expects a parent folder containing two subfolders:
+#   <folder>/women  -> attached to seeded FEMALE profiles
+#   <folder>/men    -> attached to seeded MALE profiles
+# Photos are paired with profiles in sorted filename order.
 #
-# The photos folder must contain women/ and men/ subfolders. Photos are paired
-# with profiles by the manifest's per-gender ordinal (sorted filename order),
-# so any count works — extra photos are unused, and ordinals past the available
-# photos are skipped with a note.
+# Requires the SERVICE ROLE key (bypasses RLS — the seeded users never log in).
+# Get it from: Supabase dashboard -> Project Settings -> API -> service_role.
+# It is a SECRET: pass it via env, never commit it.
 #
-# Re-running re-uploads to the same fixed paths (overwrites), which is fine.
+# Usage:
+#   export SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+#   ./supabase/dev/upload_seed_photos.sh "/Users/me/Desktop/script photos"
+#
+# Re-running adds another photo to each profile. To start clean first:
+#   delete from public.profile_photos
+#   where user_id in (select id from public.profiles where display_name like 'Test %');
+# (Storage files are left orphaned but harmless — see supabase/dev/reset.sql.)
 
+# No `set -e`: we check each request's HTTP status and `continue` on failure, so
+# one bad photo never aborts the rest. `-u` still catches unset vars.
 set -uo pipefail
 
-FOLDER="${1:?Usage: $0 <photos-folder> <manifest.csv>}"
-MANIFEST="${2:?Usage: $0 <photos-folder> <manifest.csv>}"
+SUPABASE_URL="${SUPABASE_URL:-https://kegkaerpusgwgfjjrxha.supabase.co}"
+KEY="${SUPABASE_SERVICE_ROLE_KEY:?Set SUPABASE_SERVICE_ROLE_KEY (dashboard -> Settings -> API -> service_role)}"
+FOLDER="${1:?Usage: $0 /path/to/parent-folder (with men/ and women/ subfolders)}"
 BUCKET="profile-photos"
 
-if ! command -v supabase >/dev/null 2>&1; then
-  echo "supabase CLI not found on PATH." >&2; exit 1
-fi
-[ -f "$MANIFEST" ] || { echo "Manifest not found: $MANIFEST" >&2; exit 1; }
+upload_for_gender() {
+  local gender="$1" subdir="$2"
+  local dir="$FOLDER/$subdir"
+  if [ ! -d "$dir" ]; then
+    echo "[$gender] no '$subdir' subfolder at '$dir' — skipping."
+    return
+  fi
 
-# Sorted photo lists per gender subfolder.
-load_photos() {
-  find "$1" -maxdepth 1 -type f \
-    \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) 2>/dev/null | sort
+  # Seeded profile IDs of this gender (CSV, skip header).
+  local ids=()
+  while IFS= read -r line; do
+    [ -n "$line" ] && ids+=("$line")
+  done < <(curl -s \
+    "$SUPABASE_URL/rest/v1/profiles?select=id&gender=eq.$gender&display_name=like.Test*&order=display_name" \
+    -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Accept: text/csv" \
+    | tail -n +2 | tr -d '\r')
+
+  # Local image files in the subfolder, sorted.
+  local photos=()
+  while IFS= read -r f; do
+    [ -n "$f" ] && photos+=("$f")
+  done < <(find "$dir" -maxdepth 1 -type f \
+    \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) | sort)
+
+  # Pair as many as possible — never assume exactly 20 of either.
+  local count=$(( ${#ids[@]} < ${#photos[@]} ? ${#ids[@]} : ${#photos[@]} ))
+  echo "[$gender] profiles: ${#ids[@]}  photos: ${#photos[@]}  -> uploading $count"
+  if [ "${#photos[@]}" -gt "${#ids[@]}" ]; then
+    echo "  note: $(( ${#photos[@]} - ${#ids[@]} )) extra $gender photo(s) ignored (only ${#ids[@]} profiles)."
+  elif [ "${#photos[@]}" -lt "${#ids[@]}" ]; then
+    echo "  note: $(( ${#ids[@]} - ${#photos[@]} )) $gender profile(s) will have no photo."
+  fi
+  if [ "$count" -eq 0 ]; then
+    echo "  nothing to upload for $gender."
+    return
+  fi
+
+  local i
+  for (( i=0; i<count; i++ )); do
+    local user_id="${ids[$i]}"
+    local file="${photos[$i]}"
+    local ext; ext="$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')"
+    local ct="image/jpeg"; [ "$ext" = "png" ] && ct="image/png"
+    local pid; pid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+    local obj="$user_id/$pid.$ext"
+
+    local http
+    http=$(curl -s -o /tmp/yentl_seed_upload.out -w "%{http_code}" \
+      -X POST "$SUPABASE_URL/storage/v1/object/$BUCKET/$obj" \
+      -H "Authorization: Bearer $KEY" -H "Content-Type: $ct" -H "x-upsert: true" \
+      --data-binary "@$file")
+    if [ "$http" != "200" ]; then
+      echo "  [$gender $((i+1))/$count] upload FAILED ($http): $(cat /tmp/yentl_seed_upload.out)"
+      continue
+    fi
+
+    http=$(curl -s -o /tmp/yentl_seed_row.out -w "%{http_code}" \
+      -X POST "$SUPABASE_URL/rest/v1/profile_photos" \
+      -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+      -H "Content-Type: application/json" -H "Prefer: return=minimal" \
+      -d "{\"id\":\"$pid\",\"user_id\":\"$user_id\",\"storage_path\":\"$obj\",\"order_index\":0}")
+    if [ "$http" != "201" ]; then
+      echo "  [$gender $((i+1))/$count] row insert FAILED ($http): $(cat /tmp/yentl_seed_row.out)"
+      continue
+    fi
+
+    echo "  [$gender $((i+1))/$count] $user_id  <-  $(basename "$file")"
+  done
 }
-WOMEN=(); while IFS= read -r f; do [ -n "$f" ] && WOMEN+=("$f"); done < <(load_photos "$FOLDER/women")
-MEN=();   while IFS= read -r f; do [ -n "$f" ] && MEN+=("$f");   done < <(load_photos "$FOLDER/men")
-echo "women photos: ${#WOMEN[@]}   men photos: ${#MEN[@]}"
 
-ok=0; skip=0; fail=0
-while IFS=, read -r gender ord path; do
-  gender="$(echo "$gender" | tr -d '[:space:]\r')"
-  ord="$(echo "$ord" | tr -d '[:space:]\r')"
-  path="$(echo "$path" | tr -d '[:space:]\r')"
-  [ "$gender" = "gender" ] && continue           # header row
-  [ -z "$gender" ] && continue                   # blank line
-  case "$ord" in (*[!0-9]*|'') continue;; esac    # not a number
-
-  if [ "$gender" = "female" ]; then
-    idx=$(( ord - 1 )); file="${WOMEN[$idx]:-}"
-  else
-    idx=$(( ord - 1 )); file="${MEN[$idx]:-}"
-  fi
-
-  if [ -z "$file" ]; then
-    echo "  [$gender #$ord] no photo for this ordinal — skipping."
-    skip=$(( skip + 1 )); continue
-  fi
-
-  ext="$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')"
-  ct="image/jpeg"; [ "$ext" = "png" ] && ct="image/png"
-
-  if supabase storage cp --linked --yes --content-type "$ct" \
-       "$file" "ss:///$BUCKET/$path" >/dev/null 2>/tmp/yentl_cp_err; then
-    echo "  [$gender #$ord] uploaded $(basename "$file") -> $path"
-    ok=$(( ok + 1 ))
-  else
-    echo "  [$gender #$ord] FAILED: $(tr -d '\n' < /tmp/yentl_cp_err)"
-    fail=$(( fail + 1 ))
-  fi
-done < "$MANIFEST"
-
-echo "Done. uploaded=$ok skipped=$skip failed=$fail"
+upload_for_gender female women
+upload_for_gender male men
+echo "Done."
