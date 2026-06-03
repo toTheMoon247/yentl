@@ -30,7 +30,7 @@ FOLDER="${1:?Usage: $0 /path/to/parent-folder (with men/ and women/ subfolders)}
 BUCKET="profile-photos"
 
 upload_for_gender() {
-  local gender="$1" subdir="$2"
+  local gender="$1" subdir="$2" pin_name="${3:-}" pin_pos="${4:-}"
   local dir="$FOLDER/$subdir"
   if [ ! -d "$dir" ]; then
     echo "[$gender] no '$subdir' subfolder at '$dir' — skipping."
@@ -52,6 +52,32 @@ upload_for_gender() {
     [ -n "$f" ] && photos+=("$f")
   done < <(find "$dir" -maxdepth 1 -type f \
     \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) | sort)
+
+  # Optional: pin a specific photo to a 1-based position in the upload order
+  # (so e.g. a known face lands on a known profile). Index-based loops avoid
+  # the bash 3.2 set -u empty-array quirk.
+  if [ -n "$pin_name" ] && [ -n "$pin_pos" ] && [ "${#photos[@]}" -gt 0 ]; then
+    local kept=() pinned="" p m="${#photos[@]}"
+    for (( p=0; p<m; p++ )); do
+      if [ "$(basename "${photos[$p]}")" = "$pin_name" ]; then
+        pinned="${photos[$p]}"
+      else
+        kept+=("${photos[$p]}")
+      fi
+    done
+    if [ -n "$pinned" ]; then
+      local result=() k n="${#kept[@]}" insert_at=$(( pin_pos - 1 ))
+      for (( k=0; k<n; k++ )); do
+        [ "$k" -eq "$insert_at" ] && result+=("$pinned")
+        result+=("${kept[$k]}")
+      done
+      [ "$insert_at" -ge "$n" ] && result+=("$pinned")
+      photos=("${result[@]}")
+      echo "[$gender] pinned '$pin_name' to position $pin_pos."
+    else
+      echo "[$gender] note: pin '$pin_name' not found in $subdir/ — using plain sort."
+    fi
+  fi
 
   # Clean existing photo rows for these seeded profiles first, so re-running
   # gives exactly one photo each (no duplicates / leftover broken rows). The
@@ -109,6 +135,7 @@ upload_for_gender() {
   done
 }
 
-upload_for_gender female women
+# Pin Kanyin.jpg to the 7th uploaded women photo (4th arg = position).
+upload_for_gender female women "Kanyin.jpg" 7
 upload_for_gender male men
 echo "Done."
