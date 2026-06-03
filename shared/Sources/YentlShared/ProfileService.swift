@@ -341,9 +341,13 @@ public final class ProfileService {
 
     private struct CompletionPayload: Encodable {
         let profileCompletedAt: Date
+        // MVP mock: profiles go live immediately on completion. The real
+        // approval pipeline (Phase 12) will gate this instead.
+        let reviewState = "live"
 
         enum CodingKeys: String, CodingKey {
             case profileCompletedAt = "profile_completed_at"
+            case reviewState = "review_state"
         }
     }
 

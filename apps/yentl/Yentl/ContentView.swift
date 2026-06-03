@@ -104,10 +104,22 @@ private struct AccountStageErrorView: View {
     }
 }
 
-/// Home for signed-in users with a completed profile — shows their own
-/// profile as others see it (no hidden fields). Discovery/matches arrive in
-/// later phases; profile editing is a follow-up.
+/// Home for signed-in users with a completed profile — a tab bar with the
+/// discovery stack and the user's own profile.
 private struct SignedInHomeView: View {
+    var body: some View {
+        TabView {
+            DiscoveryView()
+                .tabItem { Label("Discover", systemImage: "sparkles") }
+            ProfileTab()
+                .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+        }
+    }
+}
+
+/// The user's own profile tab — shows their profile as others see it (no hidden
+/// fields), with edit and sign-out.
+private struct ProfileTab: View {
     @Environment(AuthService.self) private var auth
     @State private var showingEdit = false
     @State private var reloadID = 0
@@ -147,4 +159,5 @@ private struct SignedInHomeView: View {
     ContentView()
         .environment(AuthService.shared)
         .environment(ProfileService.shared)
+        .environment(DiscoveryService.shared)
 }
