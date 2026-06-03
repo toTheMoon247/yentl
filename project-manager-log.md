@@ -117,3 +117,62 @@ Commit attribution — fixed across all history:
 - Start **Phase 2 — profile creation + storage**: `profiles` / `profile_photos` table schema (public + hidden matchmaker fields), Supabase Storage bucket + RLS, and the profile creation wizard in the Yentl app.
 - Settle the open Phase 2 question: are height/income required at signup or optional?
 - Fold the **account-state model** (logged out / no profile / pending / live / rejected) into the Phase 2 schema work now that profile states are about to exist.
+
+---
+
+## Day 4 — 2026-06-02 → 2026-06-03
+
+**Today.** Built all of **Phase 2 — Profile Creation & Storage** in five vertical slices and tagged **`v0.3.0 — Profile Creation`**. A user can now build a full profile in Yentl, and a matchmaker can open it (public + hidden fields) in Yentl Matchmaker.
+
+Slices (each its own CI-green commit):
+
+- **Slice 1 — Basics:** `profiles` table + `gender` enum + owner/staff RLS; `ProfileService`; basics wizard step; an **account-stage router** (onboarding → profile → ready) that folded in the Phase-1 account-state model.
+- **Slice 2 — Photos:** `profile_photos` table + a **private storage bucket** with per-user-folder RLS; upload/reorder/delete/signed-URL ops; client-side downscale; PhotosPicker UI. Hit and fixed an RLS bug — Swift's `UUID.uuidString` is uppercase but Postgres `auth.uid()::text` is lowercase, so the per-folder storage policy rejected uploads ("new row violates row-level security policy").
+- **Slice 3 — Details:** bio / height / income / `interests[]` + `profile_prompts` table; **preset** prompt & interest lists; required height/income.
+- **Slice 4 — Preview & viewer:** reusable shared `PublicProfileCard` + `ProfileScreen`; wizard preview step; consumer home shows your own profile; matchmaker profile browser → viewer with the hidden fields.
+- **Slice 5 — Edit:** reusable `PhotoManager`; `EditProfileView` (prefilled single form).
+
+Decisions locked: height/income **required**; prompts/interests from fixed **preset lists**; hidden fields stored on `profiles` (protecting them from *other* consumers deferred to Phase 4's discovery projection). Deferred within the phase: image **variant generation** (single downscaled JPEG for now). Also evolved `supabase/dev/reset.sql` into a proper test-reset toolkit.
+
+**Progress.** Phases 0–2 done; `v0.1.0`–`v0.3.0` tagged. Profile lifecycle is real end to end.
+
+**Steps for tomorrow.**
+
+- Decide Phase 3's fate (it's only a mock) and start Phase 4 — Discovery & Likes.
+
+---
+
+## Day 5 — 2026-06-03 → 2026-06-04
+
+**Today.** Two planning calls, all of **Phase 4 — Discovery & Likes**, a pile of dev tooling, a CI-billing detour, and a performance pass. Tagged **`v0.4.0 — Discovery & Likes`**.
+
+Planning decisions:
+
+- **Folded Phase 3 into Phase 4.** Phase 3 was only a *mock*; its sole real work (the `profile_review_state` column + a feature flag) moves to Phase 4 where discovery first needs it — so we write the "live only" filter once instead of retrofitting later. The real approval pipeline stays Phase 12. The unused `profile_approval_enabled` flag is further deferred to Phase 12 (nothing reads it until then).
+- **Cut the consumer "likes you" inbox.** A "who likes you" feed runs against Yentl's matchmaker-curated premise. Swipes are still recorded (the matchmaker's Decision Panel will order candidates by who already liked a user, Phase 5) but never surfaced to consumers.
+
+Phase 4 build (3 slices):
+
+- **Slice 1:** `profile_review_state` (mock → `live` on completion, + backfill); `swipes` table + `swipe_action` enum + RLS; the **`discovery_feed` security-definer RPC** — a public-columns-only projection so height/income never leak; RLS so live profiles' photos/prompts are readable. Yentl home became a **Discover / Profile tab bar**; basic swipe card with Like/Pass.
+- **Slice 2:** draggable `SwipeCard` (drag right/left = like/pass with a LIKE/PASS stamp + fling animation), tap-through detail sheet, empty/error states.
+- **Slice 3:** plan close-out + this milestone.
+
+Dev tooling & testing:
+
+- Seeded **40 profiles** (`seed_profiles.sql`) and built a **gender-matched photo uploader** (`upload_seed_photos.sh`). The new `sb_secret_` key failed the storage API ("Invalid Compact JWS" — it wants a JWT); after trying a CLI-session route and rolling it back, we settled on the legacy `service_role` JWT. Script later made self-cleaning (no duplicate/shadowing rows) and given a "pin" so a chosen photo lands on a chosen profile (Kanyin → 7th).
+- Added a **DEBUG-only "Reset swipes"** button (+ a `swipes_delete_own` RLS policy) so discovery can be re-tested.
+
+CI / infra:
+
+- GitHub Actions **billing-blocked** all jobs — macOS runners bill at 10×, and our frequent direct-to-`main` pushes burned the free minutes. Considered trimming CI (paths-ignore, SwiftLint on Linux, cancel-stale); ultimately **made the repo public** (free unlimited Actions) after confirming no real secrets are committed (only the public-by-design publishable key) and weighing the IP exposure.
+
+Performance:
+
+- Swipe photos lagged ~0.5s/card. Added next-card **prefetch** of signed URLs + an **in-memory decoded-image cache** (`CachedImage`/`ImageCache`), so cards after the first render instantly. Deeper perf (photos in the feed RPC, image variants, CDN) stays deferred.
+
+**Progress.** Phases 0–4 complete; `v0.1.0`–`v0.4.0` tagged, all CI-green, history fully attributed, repo public with free CI. Discovery works end-to-end against seeded data.
+
+**Steps for tomorrow.**
+
+- Start **Phase 5 — Matchmaker Queue & Decision Panel** (the core differentiator): `matchmaking_queue` (M/F alternation), the swipe-style Decision Panel (pinned user + candidate viewer, candidates ordered by who already liked them), internal notes, percentile fields, and the first-encounter matchmaker-assigned attractiveness rating.
+- Resolve the open Phase 5 question on candidate ordering once the "liked-you" pool is exhausted.
