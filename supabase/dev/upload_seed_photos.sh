@@ -16,10 +16,9 @@
 #   export SUPABASE_SERVICE_ROLE_KEY="eyJ..."
 #   ./supabase/dev/upload_seed_photos.sh "/Users/me/Desktop/script photos"
 #
-# Re-running adds another photo to each profile. To start clean first:
-#   delete from public.profile_photos
-#   where user_id in (select id from public.profiles where display_name like 'Test %');
-# (Storage files are left orphaned but harmless — see supabase/dev/reset.sql.)
+# Re-running is safe: each seeded profile's existing photo rows are deleted
+# first, so you always end up with exactly one photo per profile. (Old storage
+# files orphan harmlessly — see supabase/dev/reset.sql.)
 
 # No `set -e`: we check each request's HTTP status and `continue` on failure, so
 # one bad photo never aborts the rest. `-u` still catches unset vars.
@@ -53,6 +52,16 @@ upload_for_gender() {
     [ -n "$f" ] && photos+=("$f")
   done < <(find "$dir" -maxdepth 1 -type f \
     \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) | sort)
+
+  # Clean existing photo rows for these seeded profiles first, so re-running
+  # gives exactly one photo each (no duplicates / leftover broken rows). The
+  # old storage files orphan harmlessly. Targets only seeded users.
+  if [ "${#ids[@]}" -gt 0 ]; then
+    local id_list; id_list="$(IFS=,; echo "${ids[*]}")"
+    curl -s -X DELETE \
+      "$SUPABASE_URL/rest/v1/profile_photos?user_id=in.($id_list)" \
+      -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Prefer: return=minimal" >/dev/null
+  fi
 
   # Pair as many as possible — never assume exactly 20 of either.
   local count=$(( ${#ids[@]} < ${#photos[@]} ? ${#ids[@]} : ${#photos[@]} ))
