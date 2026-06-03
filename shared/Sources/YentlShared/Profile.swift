@@ -54,3 +54,27 @@ public struct Profile: Codable, Sendable {
         case profileCompletedAt = "profile_completed_at"
     }
 }
+
+/// A single profile photo. The image bytes live in the `profile-photos`
+/// Storage bucket at `storagePath`; this is the database row describing it.
+/// `orderIndex` is the display order (0 = first).
+public struct ProfilePhoto: Codable, Sendable, Identifiable, Equatable {
+    public let id: UUID
+    public let userId: UUID
+    public var storagePath: String
+    public var orderIndex: Int
+
+    public init(id: UUID, userId: UUID, storagePath: String, orderIndex: Int) {
+        self.id = id
+        self.userId = userId
+        self.storagePath = storagePath
+        self.orderIndex = orderIndex
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case storagePath = "storage_path"
+        case orderIndex = "order_index"
+    }
+}
