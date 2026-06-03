@@ -122,7 +122,10 @@ public final class ProfileService {
     public func uploadPhoto(jpegData: Data) async throws -> ProfilePhoto {
         let userID = try await currentUserID()
         let photoID = UUID()
-        let path = "\(userID.uuidString)/\(photoID.uuidString).jpg"
+        // Lowercase to match Postgres `auth.uid()::text` (Swift's uuidString is
+        // uppercase): the storage RLS scopes access by the first path segment
+        // == the caller's uid, so a case mismatch would fail the policy.
+        let path = "\(userID.uuidString.lowercased())/\(photoID.uuidString.lowercased()).jpg"
         do {
             let nextIndex = try await listPhotos().count
             try await Backend.supabase.storage
