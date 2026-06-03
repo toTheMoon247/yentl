@@ -57,6 +57,21 @@ public final class DiscoveryService {
         }
     }
 
+    /// Deletes all of the current user's swipes, so the discovery feed shows
+    /// everyone again. Intended for development/testing only.
+    public func clearMySwipes() async throws {
+        let fromUser = try await currentUserID()
+        do {
+            try await Backend.supabase
+                .from("swipes")
+                .delete()
+                .eq("from_user", value: fromUser)
+                .execute()
+        } catch {
+            throw DiscoveryError.unexpected(error)
+        }
+    }
+
     // MARK: - Private
 
     private func currentUserID() async throws -> UUID {

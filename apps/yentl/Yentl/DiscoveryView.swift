@@ -31,6 +31,14 @@ struct DiscoveryView: View {
         NavigationStack {
             content
                 .navigationTitle("Discover")
+                .toolbar {
+                    #if DEBUG
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Reset swipes") { Task { await resetSwipes() } }
+                            .disabled(isActing)
+                    }
+                    #endif
+                }
         }
         .task { await loadFeed() }
         .task(id: current?.id) { await loadCandidateMedia() }
@@ -151,6 +159,18 @@ struct DiscoveryView: View {
             errorMessage = nil
         }
     }
+
+    #if DEBUG
+    private func resetSwipes() async {
+        errorMessage = nil
+        do {
+            try await discovery.clearMySwipes()
+            await loadFeed()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    #endif
 
     private func act(_ action: SwipeAction) async {
         guard let current else { return }
