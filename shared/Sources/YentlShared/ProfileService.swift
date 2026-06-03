@@ -83,6 +83,61 @@ public final class ProfileService {
         }
     }
 
+    /// Saves bio, interests, and prompts (the optional "about you" details).
+    /// Prompts are replaced wholesale (delete + insert) for simplicity.
+    public func saveDetails(
+        bio: String?,
+        interests: [String],
+        prompts: [ProfilePromptDraft]
+    ) async throws {
+        let userID = try await currentUserID()
+        do {
+            try await Backend.supabase
+                .from("profiles")
+                .update(DetailsPayload(bio: bio, interests: interests))
+                .eq("id", value: userID)
+                .execute()
+
+            try await Backend.supabase
+                .from("profile_prompts")
+                .delete()
+                .eq("user_id", value: userID)
+                .execute()
+
+            let rows = prompts.enumerated().map { index, draft in
+                ProfilePrompt(
+                    id: UUID(),
+                    userId: userID,
+                    prompt: draft.prompt,
+                    answer: draft.answer,
+                    orderIndex: index
+                )
+            }
+            if !rows.isEmpty {
+                try await Backend.supabase
+                    .from("profile_prompts")
+                    .insert(rows)
+                    .execute()
+            }
+        } catch {
+            throw ProfileError.unexpected(error)
+        }
+    }
+
+    /// Saves the hidden matchmaker fields (height, income). Required to finish.
+    public func savePrivateDetails(heightCm: Int, incomeAnnual: Int) async throws {
+        let userID = try await currentUserID()
+        do {
+            try await Backend.supabase
+                .from("profiles")
+                .update(PrivatePayload(heightCm: heightCm, incomeAnnual: incomeAnnual))
+                .eq("id", value: userID)
+                .execute()
+        } catch {
+            throw ProfileError.unexpected(error)
+        }
+    }
+
     /// Stamps `profile_completed_at`, marking the profile live (MVP).
     public func markProfileComplete() async throws {
         let userID = try await currentUserID()
@@ -230,6 +285,21 @@ public final class ProfileService {
 
         enum CodingKeys: String, CodingKey {
             case profileCompletedAt = "profile_completed_at"
+        }
+    }
+
+    private struct DetailsPayload: Encodable {
+        let bio: String?
+        let interests: [String]
+    }
+
+    private struct PrivatePayload: Encodable {
+        let heightCm: Int
+        let incomeAnnual: Int
+
+        enum CodingKeys: String, CodingKey {
+            case heightCm = "height_cm"
+            case incomeAnnual = "income_annual"
         }
     }
 

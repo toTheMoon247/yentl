@@ -27,6 +27,12 @@ public struct Profile: Codable, Sendable {
     public var dateOfBirth: String
     public var gender: Gender
     public var location: String
+    public var bio: String?
+    public var interests: [String]
+    /// Hidden matchmaker field — height in centimetres.
+    public var heightCm: Int?
+    /// Hidden matchmaker field — annual income.
+    public var incomeAnnual: Int?
     public var profileCompletedAt: Date?
 
     public init(
@@ -35,6 +41,10 @@ public struct Profile: Codable, Sendable {
         dateOfBirth: String,
         gender: Gender,
         location: String,
+        bio: String? = nil,
+        interests: [String] = [],
+        heightCm: Int? = nil,
+        incomeAnnual: Int? = nil,
         profileCompletedAt: Date? = nil
     ) {
         self.id = id
@@ -42,6 +52,10 @@ public struct Profile: Codable, Sendable {
         self.dateOfBirth = dateOfBirth
         self.gender = gender
         self.location = location
+        self.bio = bio
+        self.interests = interests
+        self.heightCm = heightCm
+        self.incomeAnnual = incomeAnnual
         self.profileCompletedAt = profileCompletedAt
     }
 
@@ -51,7 +65,47 @@ public struct Profile: Codable, Sendable {
         case dateOfBirth = "date_of_birth"
         case gender
         case location
+        case bio
+        case interests
+        case heightCm = "height_cm"
+        case incomeAnnual = "income_annual"
         case profileCompletedAt = "profile_completed_at"
+    }
+}
+
+/// A user's answered prompt (question chosen from a preset list + answer).
+public struct ProfilePrompt: Codable, Sendable, Identifiable, Equatable {
+    public let id: UUID
+    public let userId: UUID
+    public var prompt: String
+    public var answer: String
+    public var orderIndex: Int
+
+    public init(id: UUID, userId: UUID, prompt: String, answer: String, orderIndex: Int) {
+        self.id = id
+        self.userId = userId
+        self.prompt = prompt
+        self.answer = answer
+        self.orderIndex = orderIndex
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case prompt
+        case answer
+        case orderIndex = "order_index"
+    }
+}
+
+/// Input for saving a prompt during profile creation (before it has an id).
+public struct ProfilePromptDraft: Sendable, Equatable {
+    public var prompt: String
+    public var answer: String
+
+    public init(prompt: String, answer: String) {
+        self.prompt = prompt
+        self.answer = answer
     }
 }
 

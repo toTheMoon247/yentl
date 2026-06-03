@@ -2,15 +2,16 @@
 //  ProfileWizard.swift
 //  Yentl
 //
-//  Profile creation wizard. Slices so far:
-//    1. Basics — name, date of birth, gender, location.
-//    2. Photos — add (from the photo library), reorder, delete.
-//  Later slices add bio, prompts, interests, and the hidden matchmaker
-//  fields (height, income), then a preview.
+//  Profile creation wizard. Steps:
+//    1. Basics  — name, date of birth, gender, location.
+//    2. Photos  — add (from the photo library), reorder, delete.
+//    3. Details — bio, interests, prompts (optional).
+//    4. Private — height + income (required; hidden matchmaker fields).
+//  A later slice adds a preview before finishing.
 //
-//  Basics are saved on "Next" (without completing the profile); the profile
-//  is marked complete at the end of the photos step, which routes the user
-//  to the home screen.
+//  Each step saves its data on "Next" without completing the profile; the
+//  profile is marked complete at the end of the final step, which routes the
+//  user to the home screen.
 //
 
 import PhotosUI
@@ -25,7 +26,7 @@ struct ProfileWizard: View {
     @State private var step: Step = .basics
 
     private enum Step {
-        case basics, photos
+        case basics, photos, details, privateDetails
     }
 
     var body: some View {
@@ -33,7 +34,11 @@ struct ProfileWizard: View {
         case .basics:
             BasicsStep(onSaved: { step = .photos })
         case .photos:
-            PhotosStep(onBack: { step = .basics }, onFinish: onComplete)
+            PhotosStep(onBack: { step = .basics }, onNext: { step = .details })
+        case .details:
+            DetailsStep(onBack: { step = .photos }, onNext: { step = .privateDetails })
+        case .privateDetails:
+            PrivateDetailsStep(onBack: { step = .details }, onFinish: onComplete)
         }
     }
 }
@@ -141,7 +146,7 @@ private struct BasicsStep: View {
 
 private struct PhotosStep: View {
     let onBack: () -> Void
-    let onFinish: () -> Void
+    let onNext: () -> Void
 
     @Environment(ProfileService.self) private var profiles
 
@@ -150,7 +155,6 @@ private struct PhotosStep: View {
     @State private var picked: [PhotosPickerItem] = []
     @State private var isLoading = false
     @State private var isUploading = false
-    @State private var isFinishing = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -164,7 +168,7 @@ private struct PhotosStep: View {
                     ) {
                         Label("Add photos", systemImage: "photo.badge.plus")
                     }
-                    .disabled(isUploading || isFinishing)
+                    .disabled(isUploading)
                     if isUploading {
                         HStack { ProgressView(); Text("Uploading…") }
                     }
@@ -194,23 +198,22 @@ private struct PhotosStep: View {
 
                 Section {
                     Button {
-                        Task { await finish() }
+                        onNext()
                     } label: {
-                        centeredLabel(isFinishing ? nil : "Finish")
+                        centeredLabel("Next")
                     }
-                    .disabled(photos.isEmpty || isUploading || isFinishing)
+                    .disabled(photos.isEmpty || isUploading)
                 }
             }
             .navigationTitle("Add your photos")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Back", action: onBack).disabled(isUploading || isFinishing)
+                    Button("Back", action: onBack).disabled(isUploading)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     EditButton().disabled(photos.isEmpty)
                 }
             }
-            .disabled(isFinishing)
         }
         .task { await load() }
         .onChange(of: picked) { _, items in
@@ -272,12 +275,201 @@ private struct PhotosStep: View {
             catch { errorMessage = error.localizedDescription }
         }
     }
+}
+
+// MARK: - Step 3: Details (bio, interests, prompts)
+
+private struct DetailsStep: View {
+    let onBack: () -> Void
+    let onNext: () -> Void
+
+    @Environment(ProfileService.self) private var profiles
+
+    @State private var bio = ""
+    @State private var selectedInterests: Set<String> = []
+    @State private var promptChoices: [String?] = Array(repeating: nil, count: ProfilePresets.maxPrompts)
+    @State private var promptAnswers: [String] = Array(repeating: "", count: ProfilePresets.maxPrompts)
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Bio") {
+                    TextField("Tell people about yourself…", text: $bio, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+
+                Section("Interests") {
+                    ForEach(ProfilePresets.interests, id: \.self) { interest in
+                        Button {
+                            toggle(interest)
+                        } label: {
+                            HStack {
+                                Text(interest).foregroundStyle(DesignTokens.Palette.textPrimary)
+                                Spacer()
+                                if selectedInterests.contains(interest) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(DesignTokens.Palette.primary)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ForEach(0..<ProfilePresets.maxPrompts, id: \.self) { index in
+                    Section("Prompt \(index + 1)") {
+                        Picker("Question", selection: $promptChoices[index]) {
+                            Text("None").tag(String?.none)
+                            ForEach(ProfilePresets.prompts, id: \.self) { question in
+                                Text(question).tag(String?.some(question))
+                            }
+                        }
+                        if promptChoices[index] != nil {
+                            TextField("Your answer", text: $promptAnswers[index], axis: .vertical)
+                                .lineLimit(2...4)
+                        }
+                    }
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .font(DesignTokens.Typography.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        centeredLabel(isSaving ? nil : "Next")
+                    }
+                    .disabled(isSaving)
+                }
+            }
+            .navigationTitle("About you")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Back", action: onBack).disabled(isSaving)
+                }
+            }
+            .disabled(isSaving)
+        }
+    }
+
+    private func toggle(_ interest: String) {
+        if selectedInterests.contains(interest) {
+            selectedInterests.remove(interest)
+        } else {
+            selectedInterests.insert(interest)
+        }
+    }
+
+    private func save() async {
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+
+        var prompts: [ProfilePromptDraft] = []
+        for index in 0..<ProfilePresets.maxPrompts {
+            guard let question = promptChoices[index] else { continue }
+            let answer = promptAnswers[index].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !answer.isEmpty else { continue }
+            prompts.append(ProfilePromptDraft(prompt: question, answer: answer))
+        }
+
+        do {
+            let trimmedBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
+            try await profiles.saveDetails(
+                bio: trimmedBio.isEmpty ? nil : trimmedBio,
+                interests: Array(selectedInterests).sorted(),
+                prompts: prompts
+            )
+            onNext()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Step 4: Private details (height, income) — required
+
+private struct PrivateDetailsStep: View {
+    let onBack: () -> Void
+    let onFinish: () -> Void
+
+    @Environment(ProfileService.self) private var profiles
+
+    @State private var heightCm = 170
+    @State private var incomeText = ""
+    @State private var isFinishing = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("Height", selection: $heightCm) {
+                        ForEach(140...210, id: \.self) { cm in
+                            Text("\(cm) cm").tag(cm)
+                        }
+                    }
+                    TextField("Annual income", text: $incomeText)
+                        .keyboardType(.numberPad)
+                } header: {
+                    Text("Private details")
+                } footer: {
+                    Text(
+                        "Only Yentl's matchmakers can see your height and income — "
+                        + "they're never shown to other users. Both are required."
+                    )
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .font(DesignTokens.Typography.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    Button {
+                        Task { await finish() }
+                    } label: {
+                        centeredLabel(isFinishing ? nil : "Finish")
+                    }
+                    .disabled(!canFinish || isFinishing)
+                }
+            }
+            .navigationTitle("Almost done")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Back", action: onBack).disabled(isFinishing)
+                }
+            }
+            .disabled(isFinishing)
+        }
+    }
+
+    private var income: Int? {
+        Int(incomeText.trimmingCharacters(in: .whitespaces))
+    }
+
+    private var canFinish: Bool {
+        if let income { return income >= 0 }
+        return false
+    }
 
     private func finish() async {
+        guard let income else { return }
         errorMessage = nil
         isFinishing = true
         defer { isFinishing = false }
         do {
+            try await profiles.savePrivateDetails(heightCm: heightCm, incomeAnnual: income)
             try await profiles.markProfileComplete()
             onFinish()
         } catch {
