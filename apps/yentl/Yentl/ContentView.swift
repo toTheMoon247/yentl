@@ -104,20 +104,30 @@ private struct AccountStageErrorView: View {
     }
 }
 
-/// Placeholder home for signed-in users. Replaced with real content in Phase 2.
+/// Home for signed-in users with a completed profile — shows their own
+/// profile as others see it (no hidden fields). Discovery/matches arrive in
+/// later phases; profile editing is a follow-up.
 private struct SignedInHomeView: View {
+    @Environment(AuthService.self) private var auth
+
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.lg) {
-            Spacer()
-            Text("Welcome to Yentl")
-                .font(DesignTokens.Typography.titleLarge)
-            Text("You're signed in. Phase 2 work goes here.")
-                .font(DesignTokens.Typography.body)
-                .foregroundStyle(DesignTokens.Palette.textSecondary)
-            Spacer()
-            SignOutButton()
+        NavigationStack {
+            Group {
+                if let userID = auth.currentUserIDString.flatMap(UUID.init) {
+                    ProfileScreen(userID: userID, showHiddenFields: false)
+                } else {
+                    Text("Couldn't load your profile.")
+                        .foregroundStyle(DesignTokens.Palette.textSecondary)
+                }
+            }
+            .navigationTitle("Your profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SignOutButton()
+                }
+            }
         }
-        .padding(DesignTokens.Spacing.xl)
     }
 }
 

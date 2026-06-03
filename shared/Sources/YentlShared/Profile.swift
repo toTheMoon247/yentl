@@ -21,7 +21,7 @@ public enum Gender: String, Codable, CaseIterable, Sendable {
 /// photos, and the hidden matchmaker fields (height, income). `dateOfBirth`
 /// is an ISO `yyyy-MM-dd` string to match the Postgres `date` column exactly
 /// (no timezone ambiguity).
-public struct Profile: Codable, Sendable {
+public struct Profile: Codable, Sendable, Identifiable {
     public let id: UUID
     public var displayName: String
     public var dateOfBirth: String
@@ -33,7 +33,9 @@ public struct Profile: Codable, Sendable {
     public var heightCm: Int?
     /// Hidden matchmaker field — annual income.
     public var incomeAnnual: Int?
-    public var profileCompletedAt: Date?
+    /// ISO timestamp string (or nil). Used only as a "profile complete" flag;
+    /// kept as a String to avoid date-decoding edge cases.
+    public var profileCompletedAt: String?
 
     public init(
         id: UUID,
@@ -45,7 +47,7 @@ public struct Profile: Codable, Sendable {
         interests: [String] = [],
         heightCm: Int? = nil,
         incomeAnnual: Int? = nil,
-        profileCompletedAt: Date? = nil
+        profileCompletedAt: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -70,6 +72,18 @@ public struct Profile: Codable, Sendable {
         case heightCm = "height_cm"
         case incomeAnnual = "income_annual"
         case profileCompletedAt = "profile_completed_at"
+    }
+}
+
+public extension Profile {
+    /// Age in whole years, derived from `dateOfBirth` (`yyyy-MM-dd`).
+    var age: Int? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let dob = formatter.date(from: dateOfBirth) else { return nil }
+        return Calendar.current.dateComponents([.year], from: dob, to: Date()).year
     }
 }
 

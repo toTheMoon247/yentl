@@ -7,7 +7,7 @@
 //    2. Photos  — add (from the photo library), reorder, delete.
 //    3. Details — bio, interests, prompts (optional).
 //    4. Private — height + income (required; hidden matchmaker fields).
-//  A later slice adds a preview before finishing.
+//    5. Preview — what others will see; "Finish" marks the profile complete.
 //
 //  Each step saves its data on "Next" without completing the profile; the
 //  profile is marked complete at the end of the final step, which routes the
@@ -26,7 +26,7 @@ struct ProfileWizard: View {
     @State private var step: Step = .basics
 
     private enum Step {
-        case basics, photos, details, privateDetails
+        case basics, photos, details, privateDetails, preview
     }
 
     var body: some View {
@@ -38,7 +38,9 @@ struct ProfileWizard: View {
         case .details:
             DetailsStep(onBack: { step = .photos }, onNext: { step = .privateDetails })
         case .privateDetails:
-            PrivateDetailsStep(onBack: { step = .details }, onFinish: onComplete)
+            PrivateDetailsStep(onBack: { step = .details }, onNext: { step = .preview })
+        case .preview:
+            PreviewStep(onBack: { step = .privateDetails }, onFinish: onComplete)
         }
     }
 }
@@ -398,13 +400,13 @@ private struct DetailsStep: View {
 
 private struct PrivateDetailsStep: View {
     let onBack: () -> Void
-    let onFinish: () -> Void
+    let onNext: () -> Void
 
     @Environment(ProfileService.self) private var profiles
 
     @State private var heightCm = 170
     @State private var incomeText = ""
-    @State private var isFinishing = false
+    @State private var isSaving = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -437,20 +439,20 @@ private struct PrivateDetailsStep: View {
 
                 Section {
                     Button {
-                        Task { await finish() }
+                        Task { await save() }
                     } label: {
-                        centeredLabel(isFinishing ? nil : "Finish")
+                        centeredLabel(isSaving ? nil : "Next")
                     }
-                    .disabled(!canFinish || isFinishing)
+                    .disabled(!canContinue || isSaving)
                 }
             }
             .navigationTitle("Almost done")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Back", action: onBack).disabled(isFinishing)
+                    Button("Back", action: onBack).disabled(isSaving)
                 }
             }
-            .disabled(isFinishing)
+            .disabled(isSaving)
         }
     }
 
@@ -458,18 +460,84 @@ private struct PrivateDetailsStep: View {
         Int(incomeText.trimmingCharacters(in: .whitespaces))
     }
 
-    private var canFinish: Bool {
+    private var canContinue: Bool {
         if let income { return income >= 0 }
         return false
     }
 
-    private func finish() async {
+    private func save() async {
         guard let income else { return }
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            try await profiles.savePrivateDetails(heightCm: heightCm, incomeAnnual: income)
+            onNext()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Step 5: Preview ("what others will see") + finish
+
+private struct PreviewStep: View {
+    let onBack: () -> Void
+    let onFinish: () -> Void
+
+    @Environment(AuthService.self) private var auth
+    @Environment(ProfileService.self) private var profiles
+    @State private var isFinishing = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                if let userID {
+                    ProfileScreen(userID: userID, showHiddenFields: false)
+                        .frame(maxHeight: .infinity)
+                } else {
+                    Text("Couldn't load preview.")
+                        .foregroundStyle(DesignTokens.Palette.textSecondary)
+                        .frame(maxHeight: .infinity)
+                }
+
+                VStack(spacing: DesignTokens.Spacing.sm) {
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(DesignTokens.Typography.caption)
+                            .foregroundStyle(.red)
+                    }
+                    Button {
+                        Task { await finish() }
+                    } label: {
+                        centeredLabel(isFinishing ? nil : "Finish")
+                            .padding(.vertical, DesignTokens.Spacing.xs)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isFinishing)
+                }
+                .padding(DesignTokens.Spacing.lg)
+            }
+            .navigationTitle("Preview")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Back", action: onBack).disabled(isFinishing)
+                }
+            }
+        }
+    }
+
+    private var userID: UUID? {
+        auth.currentUserIDString.flatMap(UUID.init)
+    }
+
+    private func finish() async {
         errorMessage = nil
         isFinishing = true
         defer { isFinishing = false }
         do {
-            try await profiles.savePrivateDetails(heightCm: heightCm, incomeAnnual: income)
             try await profiles.markProfileComplete()
             onFinish()
         } catch {

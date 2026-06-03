@@ -154,12 +154,71 @@ public final class ProfileService {
 
     // MARK: - Photos
 
-    /// The user's photos, ordered for display.
+    // MARK: - Reads (own profile + staff browsing)
+
+    /// The signed-in user's full profile, or nil if none exists yet.
+    public func fetchMyProfile() async throws -> Profile? {
+        try await fetchProfile(userID: currentUserID())
+    }
+
+    /// A specific user's profile. The owner sees their own; staff
+    /// (matchmaker/admin) can read anyone's (RLS).
+    public func fetchProfile(userID: UUID) async throws -> Profile? {
+        do {
+            let rows: [Profile] = try await Backend.supabase
+                .from("profiles")
+                .select()
+                .eq("id", value: userID)
+                .limit(1)
+                .execute()
+                .value
+            return rows.first
+        } catch {
+            throw ProfileError.unexpected(error)
+        }
+    }
+
+    /// All completed profiles, newest first. For the matchmaker app (staff RLS
+    /// returns everyone; a regular user would only get their own row).
+    public func fetchAllCompletedProfiles() async throws -> [Profile] {
+        do {
+            let all: [Profile] = try await Backend.supabase
+                .from("profiles")
+                .select()
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return all.filter { $0.profileCompletedAt != nil }
+        } catch {
+            throw ProfileError.unexpected(error)
+        }
+    }
+
+    /// The current user's photos, ordered for display.
     public func listPhotos() async throws -> [ProfilePhoto] {
-        let userID = try await currentUserID()
+        try await listPhotos(userID: currentUserID())
+    }
+
+    /// A specific user's photos, ordered for display (owner or staff).
+    public func listPhotos(userID: UUID) async throws -> [ProfilePhoto] {
         do {
             return try await Backend.supabase
                 .from("profile_photos")
+                .select()
+                .eq("user_id", value: userID)
+                .order("order_index", ascending: true)
+                .execute()
+                .value
+        } catch {
+            throw ProfileError.unexpected(error)
+        }
+    }
+
+    /// A specific user's answered prompts, ordered (owner or staff).
+    public func listPrompts(userID: UUID) async throws -> [ProfilePrompt] {
+        do {
+            return try await Backend.supabase
+                .from("profile_prompts")
                 .select()
                 .eq("user_id", value: userID)
                 .order("order_index", ascending: true)

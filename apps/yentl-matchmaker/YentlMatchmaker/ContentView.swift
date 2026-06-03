@@ -59,22 +59,72 @@ struct ContentView: View {
     }
 }
 
-/// Placeholder home for staff users. Replaced with the Decision Panel and
-/// matchmaker workflows in Phase 5.
+/// Staff home: browse completed profiles and open one to review (public
+/// fields + the hidden matchmaker fields). A plain list for now — the
+/// swipe-based Decision Panel and queue arrive in Phase 5.
 private struct MatchmakerHomeView: View {
+    @Environment(ProfileService.self) private var profiles
+
+    @State private var rows: [Profile] = []
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.lg) {
-            Spacer()
-            Text("Yentl Matchmaker")
-                .font(DesignTokens.Typography.titleLarge)
-            Text("Signed in as staff. Decision Panel goes here in Phase 5.")
-                .font(DesignTokens.Typography.body)
-                .foregroundStyle(DesignTokens.Palette.textSecondary)
-                .multilineTextAlignment(.center)
-            Spacer()
-            SignOutButton()
+        NavigationStack {
+            List {
+                if isLoading {
+                    HStack { Spacer(); ProgressView(); Spacer() }
+                } else if let errorMessage {
+                    Text(errorMessage)
+                        .font(DesignTokens.Typography.caption)
+                        .foregroundStyle(.red)
+                } else if rows.isEmpty {
+                    Text("No completed profiles yet.")
+                        .foregroundStyle(DesignTokens.Palette.textSecondary)
+                } else {
+                    ForEach(rows) { profile in
+                        NavigationLink {
+                            ProfileScreen(userID: profile.id, showHiddenFields: true)
+                                .navigationTitle(profile.displayName)
+                                .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(profile.displayName)
+                                    .font(DesignTokens.Typography.body)
+                                Text(subtitle(for: profile))
+                                    .font(DesignTokens.Typography.caption)
+                                    .foregroundStyle(DesignTokens.Palette.textSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Profiles")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SignOutButton()
+                }
+            }
+            .task { await load() }
+            .refreshable { await load() }
         }
-        .padding(DesignTokens.Spacing.xl)
+    }
+
+    private func subtitle(for profile: Profile) -> String {
+        var parts = [profile.gender.displayName, profile.location]
+        if let age = profile.age { parts.insert("\(age)", at: 1) }
+        return parts.joined(separator: " · ")
+    }
+
+    private func load() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            rows = try await profiles.fetchAllCompletedProfiles()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
 
@@ -124,4 +174,5 @@ private struct RoleFetchErrorView: View {
 #Preview {
     ContentView()
         .environment(AuthService.shared)
+        .environment(ProfileService.shared)
 }
