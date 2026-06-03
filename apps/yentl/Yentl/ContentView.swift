@@ -109,12 +109,15 @@ private struct AccountStageErrorView: View {
 /// later phases; profile editing is a follow-up.
 private struct SignedInHomeView: View {
     @Environment(AuthService.self) private var auth
+    @State private var showingEdit = false
+    @State private var reloadID = 0
 
     var body: some View {
         NavigationStack {
             Group {
                 if let userID = auth.currentUserIDString.flatMap(UUID.init) {
                     ProfileScreen(userID: userID, showHiddenFields: false)
+                        .id(reloadID)
                 } else {
                     Text("Couldn't load your profile.")
                         .foregroundStyle(DesignTokens.Palette.textSecondary)
@@ -123,10 +126,19 @@ private struct SignedInHomeView: View {
             .navigationTitle("Your profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Edit") { showingEdit = true }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     SignOutButton()
                 }
             }
+        }
+        .sheet(isPresented: $showingEdit) {
+            EditProfileView(onDone: {
+                showingEdit = false
+                reloadID += 1
+            })
         }
     }
 }

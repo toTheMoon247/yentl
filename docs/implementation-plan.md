@@ -79,23 +79,23 @@ Auth method note: Apple + Google only. Email/password is intentionally not suppo
 Goal: users can complete a profile with photos, bio, prompts, and the hidden matchmaker fields.
 
 ### Yentl
-- [ ] Profile creation wizard — basics (name, DOB, gender — male/female only at MVP, location)
-- [ ] Photo upload UI (multi-photo, reorder, delete)
-- [ ] Bio and prompts entry
-- [ ] Interests selection
-- [ ] Height and income inputs (OPEN: required at signup or optional?)
-- [ ] Profile preview screen (what others will see)
-- [ ] Profile edit screen post-approval
+- [x] Profile creation wizard — basics (name, DOB, gender — male/female only at MVP, location)
+- [x] Photo upload UI (multi-photo, reorder, delete) — `PhotoManager`, PhotosPicker + signed URLs
+- [x] Bio and prompts entry — prompts chosen from a preset list
+- [x] Interests selection — preset list, multi-select
+- [x] Height and income inputs — **resolved: required** to finish (hidden matchmaker fields)
+- [x] Profile preview screen (what others will see) — final wizard step
+- [x] Profile edit screen post-approval — `EditProfileView` (single form, prefilled)
 
 ### Backend
-- [ ] `profiles` table schema (public fields + hidden fields)
-- [ ] `profile_photos` table with order index
-- [ ] Supabase Storage bucket for profile photos, with RLS
-- [ ] Image resize / variant generation on upload (thumb, medium, full)
-- [ ] Photo deletion + storage cleanup
+- [x] `profiles` table schema (public fields + hidden fields)
+- [x] `profile_photos` table with order index
+- [x] Supabase Storage bucket for profile photos, with RLS (per-user folder)
+- [ ] Image resize / variant generation on upload (thumb, medium, full) — *deferred within Phase 2; currently a single client-side downscaled JPEG per photo*
+- [x] Photo deletion + storage cleanup — `deletePhoto` removes the file + row
 
 ### Yentl Matchmaker
-- [ ] Profile viewer (mirrors Yentl's profile view, plus hidden matchmaker fields)
+- [x] Profile viewer (mirrors Yentl's profile view, plus hidden matchmaker fields) — browsable list → `ProfileScreen` with hidden fields
 
 Exit: a user can build a full profile in Yentl; a matchmaker can open that profile in Yentl Matchmaker and see both public + hidden fields.
 
