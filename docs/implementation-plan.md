@@ -121,19 +121,18 @@ Goal: users can swipe on each other and accumulate "likes received". No matches 
 - [ ] Discovery stack screen (card swiper, photos, basic info)
 - [ ] Profile detail view from the stack
 - [ ] Like / pass actions
-- [ ] "Likes you" inbox
+- ~~"Likes you" inbox~~ — **cut (2026-06-03).** Yentl has no consumer-facing "who likes you" feed; it runs against the matchmaker-curated premise. Received-like data still feeds the matchmaker's candidate ordering (Phase 5). May revisit later (e.g. as a post-MVP/premium idea).
 - [ ] Empty states (no one new, "you've seen everyone")
 
 ### Backend
 - [ ] `profile_review_state` enum + column on `profiles` (`draft / pending_ai / pending_review / live / rejected`), defaulting to `live` on completion for MVP *(folded in from Phase 3)*
 - [ ] Feature flag `profile_approval_enabled` (default `false`; flipped on in Phase 12) *(folded in from Phase 3)*
 - [ ] `swipes` table (from_user, to_user, action, created_at)
-- [ ] Discovery query: candidates the user has not yet swiped on, filtered to opposite gender **and `review_state = 'live'`** (OPEN: ordering rule — likes-you first, then ?)
+- [ ] Discovery query: candidates the user has not yet swiped on, filtered to opposite gender **and `review_state = 'live'`** (OPEN: ordering rule — recent-first for MVP; "likes-you-first" ordering belongs to the matchmaker's Decision Panel in Phase 5, not consumer discovery)
 - [ ] Public-profile projection for discovery — exposes only public fields, never the hidden matchmaker fields (height/income) to other consumers *(the hidden-field protection deferred from Phase 2)*
 - [ ] Index strategy for discovery query at scale
-- [ ] "Likes you" query
 
-Exit: two test users can each swipe on each other and the system records likes — but no match is created until a matchmaker creates one.
+Exit: two test users can each swipe on each other and the system records likes — but no match is created until a matchmaker creates one. (No consumer-facing "likes you" view — that data is the matchmaker's, surfaced in Phase 5.)
 
 ---
 
