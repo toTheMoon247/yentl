@@ -33,6 +33,40 @@ commit it points at.
 
 ---
 
+## v0.3.0 — Profile Creation (2026-06-03)
+
+Phase 2 complete: a user builds a full profile in Yentl and a matchmaker opens
+it (public + hidden fields) in Yentl Matchmaker. Validated end-to-end; CI green.
+Built in five vertical slices, each its own CI-green commit:
+
+- **Slice 1 — Basics:** `profiles` table + `gender` enum + owner/staff RLS;
+  `ProfileService` (`saveBasics`/`isProfileComplete`); basics wizard step; an
+  **account-stage router** (onboarding → profile → ready) folding in the
+  Phase-1 account-state model.
+- **Slice 2 — Photos:** `profile_photos` table + a **private storage bucket**
+  with per-user-folder RLS; upload/reorder/delete/signed-URL ops; client-side
+  downscale; PhotosPicker UI. (Fixed an RLS bug: Swift's uppercase UUID vs
+  Postgres lowercase `auth.uid()`.)
+- **Slice 3 — Details:** bio / height / income / `interests[]` columns +
+  `profile_prompts` table; **preset** prompt & interest lists; details step
+  (optional) + private step (**height/income required**).
+- **Slice 4 — Preview & viewer:** reusable `PublicProfileCard` + `ProfileScreen`
+  loader (shared); wizard **preview** step; consumer **home shows your own
+  profile**; matchmaker **profile browser → viewer with hidden height/income**.
+- **Slice 5 — Edit:** reusable `PhotoManager`; `EditProfileView` (single
+  prefilled form); **Edit** button on home with refresh-on-save.
+
+Migrations: `20260602200247_profiles_table`, `20260603025651_profile_photos`,
+`20260603031656_profile_details`.
+
+Decisions locked: height/income **required**; prompts/interests from fixed
+**preset lists**; hidden fields stored on `profiles` (protecting them from other
+consumers is the Phase 4 discovery projection's job).
+
+Not included (tracked for later): image variant generation (thumb/medium/full —
+deferred within Phase 2; one downscaled JPEG per photo for now); profile
+approval (mocked in Phase 3, real in Phase 12).
+
 ## v0.2.0 — Onboarding (2026-06-01)
 
 Post-sign-in onboarding for the Yentl consumer app, validated end-to-end in the
