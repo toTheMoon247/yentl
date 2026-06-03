@@ -9,8 +9,8 @@ This plan breaks Yentl's MVP into small, sequenced tasks grouped by phase. Each 
 | 0     | Foundations — two iOS skeletons + Supabase + CI |
 | 1     | Auth — Apple/Google for users, allow-listed login for matchmakers |
 | 2     | Profile creation + storage (photos, bio, hidden fields) |
-| 3     | Profile approval (mocked for MVP) |
-| 4     | Discovery + likes in Yentl |
+| 3     | Profile approval (mocked) — *folded into Phase 4* |
+| 4     | Discovery + likes in Yentl (+ mocked review state) |
 | 5     | **Decision Panel** — the core matchmaker UX |
 | 6     | Match creation + 24h confirmation + queue updates |
 | 7     | Chat (Stream) |
@@ -101,23 +101,15 @@ Exit: a user can build a full profile in Yentl; a matchmaker can open that profi
 
 ---
 
-## Phase 3 — Profile Approval (Mocked for MVP)
+## Phase 3 — Profile Approval (Mocked for MVP) — **folded into Phase 4**
 
-Goal: get profiles live immediately during MVP so the team can iterate on Phases 4–10 without an approval bottleneck. The full pipeline ships in Phase 12, before any outside-user beta and App Store submission.
+Decision (2026-06-03): Phase 3 is no longer a standalone phase. It was only ever a *mock* (profiles go live immediately; the real approval pipeline is Phase 12), and its sole substantive work is two schema placeholders. Those have moved into Phase 4, where `profile_review_state` is first actually consumed (discovery must show only `live` profiles). Doing it there means we write the "live only" filter once, correctly, instead of retrofitting every profile-touching query later.
 
-### Backend
-- [ ] `profile_review_state` enum and column kept in schema (`draft / pending_ai / pending_review / live / rejected`), but new profiles auto-transition to `live` on completion
-- [ ] Feature flag `profile_approval_enabled` (default `false` for MVP; flipped on in Phase 12)
+What moved to Phase 4's backend:
+- `profile_review_state` enum + column (`draft / pending_ai / pending_review / live / rejected`), defaulting to `live` on completion for MVP.
+- Feature flag `profile_approval_enabled` (default `false`; flipped on in Phase 12).
 
-### Yentl
-- [ ] Profile goes live immediately on completion — no "under review" state during MVP
-
-### Yentl Matchmaker
-- [ ] None (approval queue UI deferred to Phase 12)
-
-Note: matchmaker-assigned attractiveness rating originally lived here. It moves to Phase 5 (first Decision Panel encounter).
-
-Exit: a new user completes their profile and it appears live in the system without any approval step.
+Unchanged: profiles go live immediately (no "under review" UI during MVP); no matchmaker approval queue (Phase 12); matchmaker-assigned attractiveness rating lives in Phase 5. The full approval pipeline (AI screening, approval queue, rejected/resubmit UX, retroactive review) remains **Phase 12**.
 
 ---
 
@@ -133,8 +125,11 @@ Goal: users can swipe on each other and accumulate "likes received". No matches 
 - [ ] Empty states (no one new, "you've seen everyone")
 
 ### Backend
+- [ ] `profile_review_state` enum + column on `profiles` (`draft / pending_ai / pending_review / live / rejected`), defaulting to `live` on completion for MVP *(folded in from Phase 3)*
+- [ ] Feature flag `profile_approval_enabled` (default `false`; flipped on in Phase 12) *(folded in from Phase 3)*
 - [ ] `swipes` table (from_user, to_user, action, created_at)
-- [ ] Discovery query: candidates the user has not yet swiped on, filtered to opposite gender (OPEN: ordering rule — likes-you first, then ?)
+- [ ] Discovery query: candidates the user has not yet swiped on, filtered to opposite gender **and `review_state = 'live'`** (OPEN: ordering rule — likes-you first, then ?)
+- [ ] Public-profile projection for discovery — exposes only public fields, never the hidden matchmaker fields (height/income) to other consumers *(the hidden-field protection deferred from Phase 2)*
 - [ ] Index strategy for discovery query at scale
 - [ ] "Likes you" query
 

@@ -52,7 +52,7 @@ Swift + SwiftUI on iOS 17+, Supabase (Postgres + Auth + Storage + Edge Functions
 Non-obvious choices recorded across the docs:
 
 - **Monetization is per-confirmed-date fee** via Apple IAP — not subscription. Apple's stance on real-world service fees is the blocking open question for Phase 9.
-- **Profile approval is mocked at MVP (Phase 3)** and built fully in Phase 12 before App Store submission. Do not implement Phase 12 work inside Phase 3.
+- **Profile approval is mocked at MVP and built fully in Phase 12** before App Store submission. Phase 3 was folded into Phase 4 (2026-06-03): its only real work is the `profile_review_state` column (default `live`) + `profile_approval_enabled` flag, added in Phase 4 where discovery first needs them. Do not implement Phase 12 work early.
 - **Match confirmation: ignored = rejected.** A 24-hour non-response drops the user in the queue identically to an explicit reject.
 - **Attractiveness rating is matchmaker-assigned**, not algorithmic, and is captured on first Decision Panel encounter (Phase 5) rather than at approval — because Phase 3 is mocked.
 - **MVP is heterosexual matching only**; the queue alternates M/F. Same-sex support is deferred.
