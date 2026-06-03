@@ -44,9 +44,7 @@ struct SwipeCard: View {
     @ViewBuilder
     private var photo: some View {
         if let photoURL {
-            AsyncImage(url: photoURL) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
+            CachedImage(url: photoURL) {
                 placeholder.overlay(ProgressView())
             }
         } else {

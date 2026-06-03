@@ -173,7 +173,9 @@ struct DiscoveryView: View {
     private func warmFirstImage(at idx: Int) async {
         guard idx >= 0, idx < feed.count,
               let url = mediaByID[feed[idx].id]?.photoURLs.first else { return }
-        _ = try? await URLSession.shared.data(from: url)
+        // Download AND decode into the in-memory cache, so the card shows it
+        // with no network/decode work when reached.
+        await ImageCache.shared.load(url)
     }
 
     /// Loads (and caches) photos + prompts for the candidate at `idx`, if not
