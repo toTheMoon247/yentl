@@ -18,10 +18,15 @@ set terms_accepted_at       = null,
     onboarding_completed_at = null;
 
 ------------------------------------------------------------------------
--- OPTION B — Re-test the profile wizard (stays logged in)
--- Removes saved profiles so the creation wizard shows again next launch.
--- (Onboarding stays done, so you go straight to the wizard.)
+-- OPTION B — Re-test the profile wizard from scratch (stays logged in)
+-- Wipes the whole profile: basics, photos (rows + storage files), and
+-- prompts. Note photos/prompts reference public.users (not public.profiles),
+-- so deleting the profile row alone would leave them behind — clear all four.
+-- Onboarding stays done, so you go straight to the wizard.
 ------------------------------------------------------------------------
+-- delete from storage.objects where bucket_id = 'profile-photos';
+-- delete from public.profile_photos;
+-- delete from public.profile_prompts;
 -- delete from public.profiles;
 
 ------------------------------------------------------------------------
@@ -30,6 +35,9 @@ set terms_accepted_at       = null,
 ------------------------------------------------------------------------
 -- update public.users
 -- set terms_accepted_at = null, age_confirmed_at = null, onboarding_completed_at = null;
+-- delete from storage.objects where bucket_id = 'profile-photos';
+-- delete from public.profile_photos;
+-- delete from public.profile_prompts;
 -- delete from public.profiles;
 
 ------------------------------------------------------------------------
