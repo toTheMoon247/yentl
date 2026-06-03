@@ -118,21 +118,23 @@ Unchanged: profiles go live immediately (no "under review" UI during MVP); no ma
 Goal: users can swipe on each other and accumulate "likes received". No matches yet — that comes from the matchmaker.
 
 ### Yentl
-- [ ] Discovery stack screen (card swiper, photos, basic info)
-- [ ] Profile detail view from the stack
-- [ ] Like / pass actions
+- [x] Discovery stack screen (card swiper, photos, basic info) — draggable `SwipeCard` (drag/buttons), photo prefetch + in-memory image cache
+- [x] Profile detail view from the stack — tap a card → full `PublicProfileCard` sheet with like/pass
+- [x] Like / pass actions — recorded to `swipes`; DEBUG-only "Reset swipes" for testing
 - ~~"Likes you" inbox~~ — **cut (2026-06-03).** Yentl has no consumer-facing "who likes you" feed; it runs against the matchmaker-curated premise. Received-like data still feeds the matchmaker's candidate ordering (Phase 5). May revisit later (e.g. as a post-MVP/premium idea).
-- [ ] Empty states (no one new, "you've seen everyone")
+- [x] Empty states (no one new, "you've seen everyone") + error/retry
 
 ### Backend
-- [ ] `profile_review_state` enum + column on `profiles` (`draft / pending_ai / pending_review / live / rejected`), defaulting to `live` on completion for MVP *(folded in from Phase 3)*
-- [ ] Feature flag `profile_approval_enabled` (default `false`; flipped on in Phase 12) *(folded in from Phase 3)*
-- [ ] `swipes` table (from_user, to_user, action, created_at)
-- [ ] Discovery query: candidates the user has not yet swiped on, filtered to opposite gender **and `review_state = 'live'`** (OPEN: ordering rule — recent-first for MVP; "likes-you-first" ordering belongs to the matchmaker's Decision Panel in Phase 5, not consumer discovery)
-- [ ] Public-profile projection for discovery — exposes only public fields, never the hidden matchmaker fields (height/income) to other consumers *(the hidden-field protection deferred from Phase 2)*
-- [ ] Index strategy for discovery query at scale
+- [x] `profile_review_state` enum + column on `profiles` (`draft / pending_ai / pending_review / live / rejected`), defaulting to `live` on completion for MVP *(folded in from Phase 3)*
+- [ ] Feature flag `profile_approval_enabled` — **deferred to Phase 12.** Nothing reads it until the real approval pipeline exists, so adding it now would be dead config; it lands with Phase 12 where it's first used.
+- [x] `swipes` table (from_user, to_user, action, created_at) — `swipe_action` enum, own-RW/staff-read RLS, indexes
+- [x] Discovery query: candidates the user has not yet swiped on, opposite gender, `review_state = 'live'` — the `discovery_feed` RPC (recent-first for MVP; "likes-you-first" is the matchmaker's Decision Panel in Phase 5)
+- [x] Public-profile projection for discovery — `discovery_feed` is a security-definer projection of public columns only; height/income never leave the owner/staff scope *(hidden-field protection from Phase 2)*
+- [x] Index strategy for discovery query — `swipes` indexed on from/to; adequate for MVP (revisit profile-side indexes at scale)
 
 Exit: two test users can each swipe on each other and the system records likes — but no match is created until a matchmaker creates one. (No consumer-facing "likes you" view — that data is the matchmaker's, surfaced in Phase 5.)
+
+Deferred Phase 4 perf (revisit later): fold photo URLs into the `discovery_feed` RPC to skip the per-card `listPhotos` + sign round-trips; image variant generation (thumb/medium/full, also deferred from Phase 2); CDN. The in-memory image cache + next-card prefetch already make swiping feel instant after the first card.
 
 ---
 

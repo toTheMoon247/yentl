@@ -33,6 +33,37 @@ commit it points at.
 
 ---
 
+## v0.4.0 — Discovery & Likes (2026-06-04)
+
+Phase 4 complete: users swipe through other live profiles and the system records
+likes/passes (no matches yet — those come from the matchmaker). Validated
+end-to-end against seeded profiles; CI green.
+
+- **Discovery feed:** `discovery_feed` security-definer RPC returns only public
+  columns for live, opposite-gender, not-yet-swiped candidates — so the hidden
+  height/income never leak to other consumers. `swipes` table + `swipe_action`
+  enum with own-RW / staff-read RLS (no consumer-facing "likes you" — that data
+  is the matchmaker's, in Phase 5).
+- **Review state (mocked Phase 3):** `profile_review_state` column on `profiles`,
+  set to `live` on completion for MVP; discovery filters on it. The real
+  approval pipeline stays Phase 12.
+- **Yentl UI:** a new tab bar (Discover / Profile); a draggable `SwipeCard`
+  (drag or buttons to like/pass, tap for full detail), empty/error states, and a
+  DEBUG-only "Reset swipes" button for testing.
+- **Performance:** next-card photo prefetch + an in-memory decoded-image cache,
+  so swiping feels instant after the first card.
+
+Migrations: `20260603171739_discovery_and_swipes`, `20260603193210_swipes_delete_own`.
+
+Dev tooling: `supabase/dev/seed_profiles.sql` (40 seeded profiles) and
+`upload_seed_photos.sh` (gender-matched photo upload). Also: repo made public
+(free CI) and the `profile-photos` storage read RLS extended so live profiles'
+photos are visible in discovery.
+
+Not included (tracked, deferred): photo URLs in the feed RPC; image variants
+(thumb/medium/full); CDN; the `profile_approval_enabled` flag (lands in Phase 12
+where it's first used).
+
 ## v0.3.0 — Profile Creation (2026-06-03)
 
 Phase 2 complete: a user builds a full profile in Yentl and a matchmaker opens
