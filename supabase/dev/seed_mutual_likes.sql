@@ -22,9 +22,9 @@ pairs as (
     where m.rn <= 10
 )
 insert into public.swipes (from_user, to_user, action)
-select mid, fid, 'like' from pairs
+select mid, fid, 'like'::public.swipe_action from pairs
 union all
-select fid, mid, 'like' from pairs
+select fid, mid, 'like'::public.swipe_action from pairs
 on conflict (from_user, to_user) do nothing;
 
 -- Also make a few seeds mutually like YOUR real account, so YOUR profile (when
@@ -41,5 +41,5 @@ on conflict (from_user, to_user) do nothing;
 --     limit 5
 -- )
 -- insert into public.swipes (from_user, to_user, action)
--- select seed_id, (select id from me), 'like' from liked_back
+-- select seed_id, (select id from me), 'like'::public.swipe_action from liked_back
 -- on conflict (from_user, to_user) do nothing;
