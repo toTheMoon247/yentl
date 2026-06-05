@@ -2,14 +2,14 @@
 //  DecisionPanelView.swift
 //  YentlMatchmaker
 //
-//  The core matchmaker UX. Pins the front-of-queue user and shows their
-//  mutual-like candidates (people who liked them AND whom they liked). Skip
-//  advances the queue. When there are no candidates, a diagnostic (likes
-//  received vs given) steers toward Boost (Phase 10) or Skip.
+//  The core matchmaker UX. A photo card for the pinned (front-of-queue) user,
+//  Match / Boost actions, and a swipeable carousel of their mutual-like
+//  candidates (people who liked them AND whom they liked). Skip advances the
+//  queue. With no candidates, a diagnostic (likes received vs given) steers
+//  toward Boost (Phase 10) or Skip.
 //
-//  Slice 1: text-based rows + tap-through to the full profile. Photos in the
-//  panel and a one-at-a-time candidate viewer are later polish. Creating a
-//  match is Phase 6.
+//  Match creation is Phase 6 and Boost is Phase 10 — both buttons are shown but
+//  not yet wired. Tapping a card opens the full profile (with hidden fields).
 //
 
 import SwiftUI
@@ -22,25 +22,50 @@ struct DecisionPanelView: View {
     @State private var pinnedID: UUID?
     @State private var pinned: Profile?
     @State private var candidates: [Profile] = []
+    @State private var candidateIndex = 0
+    @State private var photoURLs: [UUID: URL] = [:]
     @State private var stats: LikeStats?
     @State private var isLoading = true
     @State private var isSkipping = false
     @State private var errorMessage: String?
+    @State private var phaseNote: String?
+    @State private var inspected: Profile?
 
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Review")
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) { SignOutButton() }
+                    ToolbarItem(placement: .principal) {
+                        VStack(spacing: 0) {
+                            Text("Review").font(.headline)
+                            Text("Decision Panel")
+                                .font(.caption2)
+                                .foregroundStyle(DesignTokens.Palette.textSecondary)
+                        }
+                    }
                     if pinnedID != nil {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button("Skip") { Task { await skip() } }
-                                .disabled(isSkipping)
+                            Button { Task { await skip() } } label: {
+                                Label("Skip", systemImage: "arrow.right")
+                            }
+                            .disabled(isSkipping)
                         }
                     }
                 }
                 .task { await load() }
+                .sheet(item: $inspected) { profile in
+                    NavigationStack {
+                        ProfileScreen(userID: profile.id, showHiddenFields: true)
+                            .navigationTitle(profile.displayName)
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button("Close") { inspected = nil }
+                                }
+                            }
+                    }
+                }
         }
     }
 
@@ -50,85 +75,100 @@ struct DecisionPanelView: View {
             ProgressView()
         } else if let errorMessage {
             messageState("exclamationmark.triangle", "Something went wrong", errorMessage)
-        } else if pinned == nil {
-            messageState("checkmark.circle", "Queue is empty", "No one is waiting to be matched right now.")
         } else if let pinned {
-            panel(for: pinned)
+            ScrollView {
+                VStack(spacing: DesignTokens.Spacing.md) {
+                    PersonCard(profile: pinned, photoURL: photoURLs[pinned.id], badge: "PINNED USER") {
+                        inspected = pinned
+                    }
+                    actionButtons
+                    if let phaseNote {
+                        Text(phaseNote)
+                            .font(DesignTokens.Typography.caption)
+                            .foregroundStyle(DesignTokens.Palette.textSecondary)
+                    }
+                    Divider().padding(.vertical, DesignTokens.Spacing.xs)
+                    candidateSection
+                }
+                .padding(DesignTokens.Spacing.md)
+            }
+        } else {
+            messageState("checkmark.circle", "Queue is empty",
+                         "No one is waiting to be matched right now.")
         }
     }
 
-    private func panel(for pinned: Profile) -> some View {
-        List {
-            Section("Pinned") {
-                NavigationLink {
-                    ProfileScreen(userID: pinned.id, showHiddenFields: true)
-                        .navigationTitle(pinned.displayName)
-                        .navigationBarTitleDisplayMode(.inline)
-                } label: {
-                    pinnedSummary(pinned)
-                }
+    private var actionButtons: some View {
+        HStack(spacing: DesignTokens.Spacing.md) {
+            Button { phaseNote = "Match creation lands in Phase 6." } label: {
+                Label("Match", systemImage: "checkmark.circle").frame(maxWidth: .infinity)
             }
+            .tint(.green)
+            Button { phaseNote = "Boost lands in Phase 10." } label: {
+                Label("Boost", systemImage: "bolt.fill").frame(maxWidth: .infinity)
+            }
+            .tint(.blue)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+    }
 
-            if candidates.isEmpty {
-                Section("Candidates") { emptyCandidates }
-            } else {
-                Section("Mutual matches (\(candidates.count))") {
-                    ForEach(candidates) { candidate in
-                        NavigationLink {
-                            ProfileScreen(userID: candidate.id, showHiddenFields: true)
-                                .navigationTitle(candidate.displayName)
-                                .navigationBarTitleDisplayMode(.inline)
-                        } label: {
-                            personRow(candidate)
+    @ViewBuilder
+    private var candidateSection: some View {
+        if candidates.isEmpty {
+            emptyCandidates
+        } else {
+            VStack(spacing: DesignTokens.Spacing.sm) {
+                HStack {
+                    Button {
+                        withAnimation { candidateIndex = max(0, candidateIndex - 1) }
+                    } label: { Image(systemName: "chevron.left") }
+                    .disabled(candidateIndex == 0)
+                    Spacer()
+                    Text("Candidate \(candidateIndex + 1) of \(candidates.count)")
+                        .font(DesignTokens.Typography.body)
+                    Spacer()
+                    Button {
+                        withAnimation { candidateIndex = min(candidates.count - 1, candidateIndex + 1) }
+                    } label: { Image(systemName: "chevron.right") }
+                    .disabled(candidateIndex == candidates.count - 1)
+                }
+                .padding(.horizontal, DesignTokens.Spacing.sm)
+
+                TabView(selection: $candidateIndex) {
+                    ForEach(Array(candidates.enumerated()), id: \.element.id) { index, candidate in
+                        PersonCard(profile: candidate, photoURL: photoURLs[candidate.id], badge: nil) {
+                            inspected = candidate
                         }
+                        .tag(index)
                     }
                 }
-            }
-        }
-    }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: 360)
 
-    private func pinnedSummary(_ profile: Profile) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            personRow(profile)
-            HStack(spacing: DesignTokens.Spacing.md) {
-                Label(profile.heightCm.map { "\($0) cm" } ?? "—", systemImage: "ruler")
-                Label(profile.incomeAnnual.map { "\($0)" } ?? "—", systemImage: "banknote")
+                Text("Swipe left or right to see other matches")
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Palette.textSecondary)
             }
-            .font(DesignTokens.Typography.caption)
-            .foregroundStyle(DesignTokens.Palette.textSecondary)
-        }
-    }
-
-    private func personRow(_ profile: Profile) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(profile.age.map { "\(profile.displayName), \($0)" } ?? profile.displayName)
-                .font(DesignTokens.Typography.body)
-            Text("\(profile.gender.displayName) · \(profile.location)")
-                .font(DesignTokens.Typography.caption)
-                .foregroundStyle(DesignTokens.Palette.textSecondary)
         }
     }
 
     @ViewBuilder
     private var emptyCandidates: some View {
-        Text("No mutual matches yet.")
-            .foregroundStyle(DesignTokens.Palette.textSecondary)
-        if let stats {
-            Text("Likes received \(stats.received) · given \(stats.given)")
-                .font(DesignTokens.Typography.caption)
-                .foregroundStyle(DesignTokens.Palette.textSecondary)
-            Text(recommendation(for: stats))
-                .font(DesignTokens.Typography.caption)
-            if boostRecommended(for: stats) {
-                Button("Boost (Phase 10)") {}
-                    .disabled(true)
+        VStack(spacing: DesignTokens.Spacing.sm) {
+            Text("No mutual matches yet.")
+                .font(DesignTokens.Typography.titleMedium)
+            if let stats {
+                Text("Likes received \(stats.received) · given \(stats.given)")
+                    .font(DesignTokens.Typography.caption)
+                    .foregroundStyle(DesignTokens.Palette.textSecondary)
+                Text(recommendation(for: stats))
+                    .font(DesignTokens.Typography.body)
+                    .multilineTextAlignment(.center)
             }
         }
-    }
-
-    private func boostRecommended(for stats: LikeStats) -> Bool {
-        // Active (giving likes) but not getting seen (not receiving) → boost.
-        stats.given > 0 && stats.received == 0
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignTokens.Spacing.xl)
     }
 
     private func recommendation(for stats: LikeStats) -> String {
@@ -161,9 +201,12 @@ struct DecisionPanelView: View {
     private func load() async {
         isLoading = true
         errorMessage = nil
+        phaseNote = nil
         pinned = nil
         candidates = []
+        candidateIndex = 0
         stats = nil
+        photoURLs = [:]
         defer { isLoading = false }
         do {
             guard let id = try await matchmaker.nextQueuedUser() else {
@@ -171,14 +214,27 @@ struct DecisionPanelView: View {
                 return
             }
             pinnedID = id
-            pinned = try await profiles.fetchProfile(userID: id)
+            let pinnedProfile = try await profiles.fetchProfile(userID: id)
+            pinned = pinnedProfile
             candidates = try await matchmaker.candidates(for: id)
             if candidates.isEmpty {
                 stats = try await matchmaker.likeStats(for: id)
             }
+            await loadPhotos(for: [pinnedProfile].compactMap { $0 } + candidates)
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func loadPhotos(for people: [Profile]) async {
+        var urls: [UUID: URL] = [:]
+        for person in people {
+            guard let photos = try? await profiles.listPhotos(userID: person.id),
+                  let first = photos.first,
+                  let url = try? await profiles.signedPhotoURL(for: first.storagePath) else { continue }
+            urls[person.id] = url
+        }
+        photoURLs = urls
     }
 
     private func skip() async {
@@ -190,6 +246,94 @@ struct DecisionPanelView: View {
             await load()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+/// A photo card for a person with their key info overlaid, plus an optional
+/// badge (e.g. "PINNED USER"). Tapping opens the full profile.
+private struct PersonCard: View {
+    let profile: Profile
+    let photoURL: URL?
+    let badge: String?
+    let onTap: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            photo
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.7)],
+                startPoint: .center,
+                endPoint: .bottom
+            )
+            info
+        }
+        .frame(height: 360)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.lg))
+        .overlay(alignment: .topLeading) { badgeView }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+    }
+
+    @ViewBuilder
+    private var photo: some View {
+        if let photoURL {
+            AsyncImage(url: photoURL) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                placeholder.overlay(ProgressView())
+            }
+        } else {
+            placeholder.overlay(
+                Image(systemName: "person.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(.white.opacity(0.7))
+            )
+        }
+    }
+
+    private var placeholder: some View {
+        LinearGradient(
+            colors: [.indigo.opacity(0.5), .purple.opacity(0.5)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var info: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(profile.age.map { "\(profile.displayName), \($0)" } ?? profile.displayName)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+            Label(profile.location, systemImage: "mappin.and.ellipse")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.9))
+            HStack(spacing: DesignTokens.Spacing.md) {
+                if let height = profile.heightCm { chip("\(height) cm", "ruler") }
+                if let income = profile.incomeAnnual { chip("\(income)", "banknote") }
+                if let interest = profile.interests.first { chip(interest, "heart") }
+            }
+            .font(.caption)
+            .foregroundStyle(.white.opacity(0.95))
+        }
+        .padding(DesignTokens.Spacing.lg)
+    }
+
+    private func chip(_ text: String, _ icon: String) -> some View {
+        Label(text, systemImage: icon).labelStyle(.titleAndIcon)
+    }
+
+    @ViewBuilder
+    private var badgeView: some View {
+        if let badge {
+            Text(badge)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, DesignTokens.Spacing.sm)
+                .padding(.vertical, DesignTokens.Spacing.xs)
+                .background(DesignTokens.Palette.primary, in: Capsule())
+                .padding(DesignTokens.Spacing.md)
         }
     }
 }
