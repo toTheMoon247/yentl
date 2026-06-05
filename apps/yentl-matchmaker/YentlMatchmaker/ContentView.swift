@@ -59,10 +59,21 @@ struct ContentView: View {
     }
 }
 
-/// Staff home: browse completed profiles and open one to review (public
-/// fields + the hidden matchmaker fields). A plain list for now — the
-/// swipe-based Decision Panel and queue arrive in Phase 5.
+/// Staff home: a tab bar with the Decision Panel (the core matchmaker UX) and
+/// a plain profile browser.
 private struct MatchmakerHomeView: View {
+    var body: some View {
+        TabView {
+            DecisionPanelView()
+                .tabItem { Label("Review", systemImage: "rectangle.stack.person.crop") }
+            ProfilesTab()
+                .tabItem { Label("Profiles", systemImage: "person.2") }
+        }
+    }
+}
+
+/// Browse completed profiles and open one (public + hidden matchmaker fields).
+private struct ProfilesTab: View {
     @Environment(ProfileService.self) private var profiles
 
     @State private var rows: [Profile] = []
@@ -175,4 +186,5 @@ private struct RoleFetchErrorView: View {
     ContentView()
         .environment(AuthService.shared)
         .environment(ProfileService.shared)
+        .environment(MatchmakerService.shared)
 }
