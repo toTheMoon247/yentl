@@ -35,7 +35,14 @@ struct DecisionPanelView: View {
         NavigationStack {
             content
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) { SignOutButton() }
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            SignOutButton()
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                                .font(.title3)
+                        }
+                    }
                     ToolbarItem(placement: .principal) {
                         VStack(spacing: 0) {
                             Text("Review").font(.headline)
