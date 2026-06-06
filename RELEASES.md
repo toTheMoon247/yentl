@@ -33,6 +33,34 @@ commit it points at.
 
 ---
 
+## v0.5.0 — Matchmaker Queue & Decision Panel (2026-06-06)
+
+Phase 5 complete: a matchmaker pulls up the front-of-queue user and reviews
+their mutual-like candidates in the Decision Panel. Validated against seeded
+data; CI green. (Creating the match is Phase 6.)
+
+- **Queue:** `matchmaking_queue` (M/F alternating), enqueued on profile go-live
+  (trigger + backfill). Staff-only security-definer RPCs: `next_queued_user`,
+  `queued_profiles` (Queue tab), `requeue_user` ("Next profile" — non-destructive,
+  sends the user to the back), `matchmaker_candidates`, `matchmaker_like_stats`.
+- **Candidates = mutual likes** (liked both ways), shown in a swipeable card
+  carousel; tap a card for the full profile (with hidden fields).
+- **Empty state is a decision:** a received-vs-given diagnostic steers Boost
+  (Phase 10) vs Next.
+- **Matchmaker app:** Review + Queue tabs; card-based panel with a pinned-user
+  card, Match/Boost buttons (stubbed for Phases 6/10), and an account menu.
+  Photos use the shared in-memory image cache (instant).
+
+Migrations: `20260605203625_matchmaking_queue`, `20260606071144_queue_list_and_requeue`.
+
+Decisions: candidates are mutual-only (matchmaker curates among mutual interest);
+internal notes and the compatibility indicator cut; **attractiveness rating +
+percentiles deferred to post-MVP** (subjective, calibration-heavy — closes Phase 5
+at one slice). Dev: `seed_mutual_likes.sql` creates varied mutual counts.
+
+Not included: match creation + 24h confirmation (Phase 6); Boost mechanic
+(Phase 10); attractiveness rating / percentiles (post-MVP).
+
 ## v0.4.0 — Discovery & Likes (2026-06-04)
 
 Phase 4 complete: users swipe through other live profiles and the system records

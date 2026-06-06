@@ -147,29 +147,29 @@ Decisions (2026-06-05):
 - **No internal notes.** Cut deliberately — free-text notes on people risk turning the tool into a CRM and storing subjective commentary.
 - **Empty candidate state is a decision, not a dead end:** show a quick diagnostic (likes *received* vs *given*) and steer the matchmaker — **Boost** if the user isn't *receiving* likes (a visibility problem), **Skip** if they aren't *giving* likes (an engagement problem boosting can't fix). The Boost action is surfaced here but **wired up in Phase 10** (its mechanic is that phase).
 - **No compatibility indicator** — mutual-like already is the strongest fit signal, so a compatibility bar adds little. (Revisit later if wanted.)
-- Attractiveness rating scale: **1–10**. Percentiles computed **on-demand via SQL** (no nightly jobs at MVP).
+- **Attractiveness rating + percentiles deferred to post-MVP (2026-06-06).** The matchmaker-assigned attractiveness rating is subjective, needs cross-matchmaker calibration to mean anything, and a stored "hotness score" is a liability during early testing — so it's a post-MVP nice-to-have. The height/income/activity/attractiveness **percentiles** go with it: they're decision-*aids* (the panel already shows the matchmaker raw height/income + the full profile), "activity" isn't even defined yet, and percentiles need population data + tuning. With both deferred, **Phase 5 is complete at Slice 1.**
 
 ### Backend
-- [ ] `matchmaking_queue` table (M / F alternation), enqueue on profile go-live (trigger + backfill)
-- [ ] Queue advancement / front-of-queue + "skip" (advance without matching)
-- [ ] Mutual-likes candidate query (both directions) — security-definer RPC, staff-only
-- [ ] Like-stats (received vs given) for the empty-state diagnostic
-- [ ] Internal-only fields: attractiveness rating (1–10, matchmaker-assigned) + height / income / activity / attractiveness percentiles (on-demand)
-- ~~Percentile calculation jobs~~ — on-demand SQL instead
+- [x] `matchmaking_queue` table (M / F alternation), enqueue on profile go-live (trigger + backfill)
+- [x] Queue advancement / front-of-queue + non-destructive "Next profile" (re-queue) — `next_queued_user`, `requeue_user`, `queued_profiles` RPCs
+- [x] Mutual-likes candidate query (both directions) — `matchmaker_candidates` security-definer RPC, staff-only
+- [x] Like-stats (received vs given) for the empty-state diagnostic — `matchmaker_like_stats`
+- [ ] ~~Attractiveness rating + height/income/activity/attractiveness percentiles~~ — **deferred to post-MVP** (see decision above)
+- ~~Percentile calculation jobs~~ — deferred with percentiles
 - ~~Internal notes table~~ — **cut**
 
 ### Yentl Matchmaker
-- [ ] Decision Panel — top section (pinned user with hidden fields)
-- [ ] Decision Panel — bottom section (candidate viewer = mutual likes, one at a time)
-- [ ] Profile inspection tap-through (full profile view, back button)
-- [ ] "Skip user" action (advance queue without matching or boosting)
-- [ ] Empty-state diagnostic (received vs given likes) → Boost (Phase 10) / Skip
-- [ ] First-encounter attractiveness rating prompt — the first matchmaker to pin a user assigns a rating; it persists and is reused by other matchmakers (moved here from Phase 3 because of the MVP mock)
+- [x] Decision Panel — pinned user card (photo + hidden height/income)
+- [x] Decision Panel — candidate viewer (mutual likes, swipeable carousel)
+- [x] Profile inspection tap-through (full profile sheet, with hidden fields)
+- [x] "Next profile" action (re-queue without matching) + Queue tab (up-next order)
+- [x] Empty-state diagnostic (received vs given likes) → Boost (Phase 10) / Next
+- [ ] ~~First-encounter attractiveness rating prompt~~ — **deferred to post-MVP**
 - ~~Candidate ordering fallback~~ — moot (candidates are exactly the mutual-like set)
 - ~~Compatibility indicator~~ — **cut**
 - ~~Internal notes editor~~ — **cut**
 
-Exit: a matchmaker can pull up a queued user and review their mutual-like candidates in the Decision Panel; the empty state steers toward Boost vs Skip.
+Exit: a matchmaker can pull up a queued user and review their mutual-like candidates in the Decision Panel; the empty state steers toward Boost vs Next. **Met.** (Match / Boost buttons are shown but wired in Phases 6 / 10.)
 
 ---
 
