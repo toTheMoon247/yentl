@@ -226,6 +226,9 @@ struct DecisionPanelView: View {
                 stats = try await matchmaker.likeStats(for: id)
             }
             await loadPhotos(for: [pinnedProfile].compactMap { $0 } + candidates)
+        } catch is CancellationError {
+            // Transient task cancellation (view re-identified during the
+            // role-gate → tab transition) — a fresh load follows; don't show it.
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -251,6 +254,9 @@ struct DecisionPanelView: View {
         do {
             try await matchmaker.requeue(userID: id)
             await load()
+        } catch is CancellationError {
+            // Transient task cancellation (view re-identified during the
+            // role-gate → tab transition) — a fresh load follows; don't show it.
         } catch {
             errorMessage = error.localizedDescription
         }

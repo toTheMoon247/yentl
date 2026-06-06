@@ -52,6 +52,7 @@ public final class ProfileService {
                 .value
             return rows.first?.profileCompletedAt != nil
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -79,6 +80,7 @@ public final class ProfileService {
                 .upsert(payload)
                 .execute()
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -120,6 +122,7 @@ public final class ProfileService {
                     .execute()
             }
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -134,6 +137,7 @@ public final class ProfileService {
                 .eq("id", value: userID)
                 .execute()
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -148,6 +152,7 @@ public final class ProfileService {
                 .eq("id", value: userID)
                 .execute()
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -174,6 +179,7 @@ public final class ProfileService {
                 .value
             return rows.first
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -190,6 +196,7 @@ public final class ProfileService {
                 .value
             return all.filter { $0.profileCompletedAt != nil }
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -210,6 +217,7 @@ public final class ProfileService {
                 .execute()
                 .value
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -225,6 +233,7 @@ public final class ProfileService {
                 .execute()
                 .value
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -258,6 +267,7 @@ public final class ProfileService {
                 .execute()
             return photo
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -274,6 +284,7 @@ public final class ProfileService {
                 .eq("id", value: photo.id)
                 .execute()
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -290,6 +301,7 @@ public final class ProfileService {
                     .execute()
             }
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }
@@ -301,6 +313,7 @@ public final class ProfileService {
                 .from(photoBucket)
                 .createSignedURL(path: storagePath, expiresIn: 3600)
         } catch {
+            if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
         }
     }

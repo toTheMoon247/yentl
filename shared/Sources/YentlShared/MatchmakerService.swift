@@ -44,6 +44,7 @@ public final class MatchmakerService {
                 .execute()
                 .value
         } catch {
+            if error is CancellationError { throw error }
             throw MatchmakerError.unexpected(error)
         }
     }
@@ -56,6 +57,7 @@ public final class MatchmakerService {
                 .execute()
                 .value
         } catch {
+            if error is CancellationError { throw error }
             throw MatchmakerError.unexpected(error)
         }
     }
@@ -69,6 +71,7 @@ public final class MatchmakerService {
                 .execute()
                 .value
         } catch {
+            if error is CancellationError { throw error }
             throw MatchmakerError.unexpected(error)
         }
     }
@@ -83,6 +86,7 @@ public final class MatchmakerService {
             let row = rows.first
             return LikeStats(received: row?.received ?? 0, given: row?.given ?? 0)
         } catch {
+            if error is CancellationError { throw error }
             throw MatchmakerError.unexpected(error)
         }
     }
@@ -95,6 +99,7 @@ public final class MatchmakerService {
                 .rpc("requeue_user", params: TargetParam(target: userID))
                 .execute()
         } catch {
+            if error is CancellationError { throw error }
             throw MatchmakerError.unexpected(error)
         }
     }
