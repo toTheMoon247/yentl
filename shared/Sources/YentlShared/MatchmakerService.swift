@@ -48,6 +48,18 @@ public final class MatchmakerService {
         }
     }
 
+    /// The active queue in pin order (for the Queue tab).
+    public func queuedProfiles() async throws -> [Profile] {
+        do {
+            return try await Backend.supabase
+                .rpc("queued_profiles")
+                .execute()
+                .value
+        } catch {
+            throw MatchmakerError.unexpected(error)
+        }
+    }
+
     /// Mutual-like candidates for the pinned user (people who liked them and
     /// whom they also liked), most-recent-mutual first.
     public func candidates(for pinnedID: UUID) async throws -> [Profile] {
@@ -75,11 +87,12 @@ public final class MatchmakerService {
         }
     }
 
-    /// Skip the pinned user — advance the queue without matching.
-    public func skip(userID: UUID) async throws {
+    /// "Next profile" — move the pinned user to the back of the queue (revisit
+    /// later) without matching.
+    public func requeue(userID: UUID) async throws {
         do {
             try await Backend.supabase
-                .rpc("skip_queued_user", params: TargetParam(target: userID))
+                .rpc("requeue_user", params: TargetParam(target: userID))
                 .execute()
         } catch {
             throw MatchmakerError.unexpected(error)

@@ -66,15 +66,15 @@ private struct MatchmakerHomeView: View {
         TabView {
             DecisionPanelView()
                 .tabItem { Label("Review", systemImage: "rectangle.stack.person.crop") }
-            ProfilesTab()
-                .tabItem { Label("Profiles", systemImage: "person.2") }
+            QueueTab()
+                .tabItem { Label("Queue", systemImage: "list.bullet.rectangle") }
         }
     }
 }
 
-/// Browse completed profiles and open one (public + hidden matchmaker fields).
-private struct ProfilesTab: View {
-    @Environment(ProfileService.self) private var profiles
+/// The matchmaking queue in pin order (who's up next), tap to open a profile.
+private struct QueueTab: View {
+    @Environment(MatchmakerService.self) private var matchmaker
 
     @State private var rows: [Profile] = []
     @State private var isLoading = true
@@ -90,27 +90,35 @@ private struct ProfilesTab: View {
                         .font(DesignTokens.Typography.caption)
                         .foregroundStyle(.red)
                 } else if rows.isEmpty {
-                    Text("No completed profiles yet.")
+                    Text("Queue is empty.")
                         .foregroundStyle(DesignTokens.Palette.textSecondary)
                 } else {
-                    ForEach(rows) { profile in
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, profile in
                         NavigationLink {
                             ProfileScreen(userID: profile.id, showHiddenFields: true)
                                 .navigationTitle(profile.displayName)
                                 .navigationBarTitleDisplayMode(.inline)
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(profile.displayName)
-                                    .font(DesignTokens.Typography.body)
-                                Text(subtitle(for: profile))
-                                    .font(DesignTokens.Typography.caption)
-                                    .foregroundStyle(DesignTokens.Palette.textSecondary)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(profile.displayName)
+                                        .font(DesignTokens.Typography.body)
+                                    Text(subtitle(for: profile))
+                                        .font(DesignTokens.Typography.caption)
+                                        .foregroundStyle(DesignTokens.Palette.textSecondary)
+                                }
+                                Spacer()
+                                if index == 0 {
+                                    Text("Up next")
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(DesignTokens.Palette.primary)
+                                }
                             }
                         }
                     }
                 }
             }
-            .navigationTitle("Profiles")
+            .navigationTitle("Queue")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     SignOutButton()
@@ -132,7 +140,7 @@ private struct ProfilesTab: View {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            rows = try await profiles.fetchAllCompletedProfiles()
+            rows = try await matchmaker.queuedProfiles()
         } catch {
             errorMessage = error.localizedDescription
         }

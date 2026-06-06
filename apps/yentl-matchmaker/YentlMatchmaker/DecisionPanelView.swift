@@ -26,7 +26,7 @@ struct DecisionPanelView: View {
     @State private var photoURLs: [UUID: URL] = [:]
     @State private var stats: LikeStats?
     @State private var isLoading = true
-    @State private var isSkipping = false
+    @State private var isAdvancing = false
     @State private var errorMessage: String?
     @State private var phaseNote: String?
     @State private var inspected: Profile?
@@ -46,10 +46,8 @@ struct DecisionPanelView: View {
                     }
                     if pinnedID != nil {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button { Task { await skip() } } label: {
-                                Label("Skip", systemImage: "arrow.right")
-                            }
-                            .disabled(isSkipping)
+                            Button("Next profile") { Task { await advance() } }
+                                .disabled(isAdvancing)
                         }
                     }
                 }
@@ -173,12 +171,12 @@ struct DecisionPanelView: View {
 
     private func recommendation(for stats: LikeStats) -> String {
         if stats.given == 0 {
-            return "They haven't liked anyone yet — boosting won't help. Skip for now."
+            return "They haven't liked anyone yet — boosting won't help. Move on with Next profile."
         }
         if stats.received == 0 {
             return "They're active but aren't being seen — consider a Boost."
         }
-        return "They have likes both ways but no mutual yet. Skip for now."
+        return "They have likes both ways but no mutual yet. Move on with Next profile."
     }
 
     private func messageState(_ icon: String, _ title: String, _ message: String) -> some View {
@@ -237,12 +235,12 @@ struct DecisionPanelView: View {
         photoURLs = urls
     }
 
-    private func skip() async {
+    private func advance() async {
         guard let id = pinnedID else { return }
-        isSkipping = true
-        defer { isSkipping = false }
+        isAdvancing = true
+        defer { isAdvancing = false }
         do {
-            try await matchmaker.skip(userID: id)
+            try await matchmaker.requeue(userID: id)
             await load()
         } catch {
             errorMessage = error.localizedDescription
