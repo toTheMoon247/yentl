@@ -6,11 +6,11 @@
 -- female seeds and inserts likes BOTH ways, creating mutual matches. When a
 -- paired user is pinned, their partner shows up as a candidate.
 --
--- Idempotent (ON CONFLICT). Two parts:
---   - a base 1:1 pairing (man rn ↔ woman rn) for the first 10, and
---   - a fan-out so the first 5 men ALSO match women rn+1 and rn+2, giving
---     several people 2–3 mutual matches (e.g. man #1 ↔ women #1/#2/#3, and
---     woman #3 ends up matched with men #1/#2/#3).
+-- Idempotent (ON CONFLICT). Dense coverage: each of the first 14 men mutually
+-- matches a sliding band of 4 women (his rank .. rank+3). So most users end up
+-- with 2–4 mutual matches (e.g. man #1 ↔ women #1–#4; woman #4 ↔ men #1–#4),
+-- while the last few men/women are left with none — handy for testing the
+-- empty-state Boost/Skip steer. Widen the band or the `rn <= 14` to taste.
 
 with m as (
     select id, row_number() over (order by display_name) as rn
@@ -21,15 +21,10 @@ f as (
     from public.profiles where display_name like 'Test Woman%'
 ),
 pairs as (
-    -- base 1:1
     select m.id as mid, f.id as fid
-    from m join f on f.rn = m.rn
-    where m.rn <= 10
-    union
-    -- fan-out: first 5 men also match the next two women
-    select m.id, f.id
-    from m join f on f.rn in (m.rn + 1, m.rn + 2)
-    where m.rn <= 5
+    from m
+    join f on f.rn between m.rn and m.rn + 3
+    where m.rn <= 14
 )
 insert into public.swipes (from_user, to_user, action)
 select mid, fid, 'like'::public.swipe_action from pairs
