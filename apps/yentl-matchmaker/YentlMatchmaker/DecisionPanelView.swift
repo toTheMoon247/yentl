@@ -232,14 +232,16 @@ struct DecisionPanelView: View {
     }
 
     private func loadPhotos(for people: [Profile]) async {
-        var urls: [UUID: URL] = [:]
+        // Resolve URLs incrementally (pinned is first, so it renders soonest)
+        // and warm the decoded-image cache in the background so swiping the
+        // candidate carousel is instant.
         for person in people {
             guard let photos = try? await profiles.listPhotos(userID: person.id),
                   let first = photos.first,
                   let url = try? await profiles.signedPhotoURL(for: first.storagePath) else { continue }
-            urls[person.id] = url
+            photoURLs[person.id] = url
+            Task { await ImageCache.shared.load(url) }
         }
-        photoURLs = urls
     }
 
     private func advance() async {
@@ -284,9 +286,7 @@ private struct PersonCard: View {
     @ViewBuilder
     private var photo: some View {
         if let photoURL {
-            AsyncImage(url: photoURL) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
+            CachedImage(url: photoURL) {
                 placeholder.overlay(ProgressView())
             }
         } else {
