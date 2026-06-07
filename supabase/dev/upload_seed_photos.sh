@@ -99,8 +99,10 @@ upload_for_gender() {
   fi
 
   # Seeded profiles (id,display_name) for this gender, via the dev view.
+  # `|| [ -n "$line" ]` processes the final line even though PostgREST's CSV has
+  # no trailing newline — otherwise the alphabetically-last seed is dropped.
   local ids=() names=() line id name
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do
     [ -z "$line" ] && continue
     [ "$line" = "id,display_name" ] && continue   # header
     id="$(echo "${line%%,*}" | tr -d '[:space:]\r')"
