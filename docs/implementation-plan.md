@@ -164,6 +164,7 @@ Decisions (2026-06-05):
 - [x] Profile inspection tap-through (full profile sheet, with hidden fields)
 - [x] "Next profile" action (re-queue without matching) + Queue tab (up-next order)
 - [x] Empty-state diagnostic (received vs given likes) → Boost (Phase 10) / Next
+- [ ] **Queue → jump-to-pin** (follow-up, post-v0.5.0): tapping a user in the Queue tab pins them in the Decision Panel (review/match them out of order) instead of just opening the read-only profile
 - [ ] ~~First-encounter attractiveness rating prompt~~ — **deferred to post-MVP**
 - ~~Candidate ordering fallback~~ — moot (candidates are exactly the mutual-like set)
 - ~~Compatibility indicator~~ — **cut**
