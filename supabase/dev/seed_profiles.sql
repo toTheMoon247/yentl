@@ -45,14 +45,28 @@ from (
 ------------------------------------------------------------------------
 -- 2) Seed completed, live profiles for those users.
 ------------------------------------------------------------------------
+-- Real gendered names by index; women[7] is Kanyin to match the pinned photo.
+with female_names(ord, name) as (values
+    (1, 'Olivia'), (2, 'Maya'), (3, 'Sofia'), (4, 'Aisha'), (5, 'Hannah'),
+    (6, 'Noa'), (7, 'Kanyin'), (8, 'Emma'), (9, 'Leila'), (10, 'Yara'),
+    (11, 'Chloe'), (12, 'Mia'), (13, 'Tamar'), (14, 'Zoe'), (15, 'Amara'),
+    (16, 'Isabella'), (17, 'Priya'), (18, 'Nina'), (19, 'Grace'), (20, 'Ava')
+),
+male_names(ord, name) as (values
+    (1, 'Liam'), (2, 'Noah'), (3, 'Ethan'), (4, 'Omar'), (5, 'Daniel'),
+    (6, 'Lucas'), (7, 'Adam'), (8, 'Mateo'), (9, 'Eitan'), (10, 'Yusuf'),
+    (11, 'Caleb'), (12, 'Leo'), (13, 'David'), (14, 'Aaron'), (15, 'Kofi'),
+    (16, 'James'), (17, 'Arjun'), (18, 'Ben'), (19, 'Marco'), (20, 'Theo')
+)
 insert into public.profiles (
     id, display_name, date_of_birth, gender, location, bio, interests,
     height_cm, income_annual, profile_completed_at, review_state
 )
 select
     u.id,
-    case when split_part(u.email, '-', 2) = 'f' then 'Test Woman ' else 'Test Man ' end
-        || split_part(split_part(u.email, '-', 3), '@', 1),
+    coalesce(fn.name, mn.name,
+        case when split_part(u.email, '-', 2) = 'f' then 'Woman ' else 'Man ' end
+            || split_part(split_part(u.email, '-', 3), '@', 1)),
     (current_date - (((22 + floor(random() * 18))::int) * interval '1 year'))::date,
     (case when split_part(u.email, '-', 2) = 'f' then 'female' else 'male' end)::public.gender,
     (array['New York', 'Tel Aviv', 'London', 'Berlin', 'Paris', 'Austin'])[1 + floor(random() * 6)],
@@ -65,5 +79,11 @@ select
     now(),
     'live'
 from auth.users u
+left join female_names fn
+    on split_part(u.email, '-', 2) = 'f'
+   and fn.ord = split_part(split_part(u.email, '-', 3), '@', 1)::int
+left join male_names mn
+    on split_part(u.email, '-', 2) = 'm'
+   and mn.ord = split_part(split_part(u.email, '-', 3), '@', 1)::int
 where u.email like 'seed-%@yentl.test'
   and not exists (select 1 from public.profiles p where p.id = u.id);

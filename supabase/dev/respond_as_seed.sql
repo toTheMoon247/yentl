@@ -16,12 +16,12 @@
 -- "Not a match" regardless of what you tap.
 
 with target as (
-    select m.id, (pa.display_name like 'Test %') as a_is_seed
+    select m.id, (ua.email like 'seed-%@yentl.test') as a_is_seed
     from public.matches m
-    join public.profiles pa on pa.id = m.user_a
-    join public.profiles pb on pb.id = m.user_b
+    join auth.users ua on ua.id = m.user_a
+    join auth.users ub on ub.id = m.user_b
     where m.state = 'pending'
-      and (pa.display_name like 'Test %' or pb.display_name like 'Test %')
+      and (ua.email like 'seed-%@yentl.test' or ub.email like 'seed-%@yentl.test')
     order by m.created_at desc
     limit 1
 )

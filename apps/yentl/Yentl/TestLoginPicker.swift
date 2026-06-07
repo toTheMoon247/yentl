@@ -33,12 +33,12 @@ struct TestLoginPicker: View {
                     Section { Text(errorMessage).foregroundStyle(.red).font(.caption) }
                 }
                 Section("Women") {
-                    ForEach(Self.accounts(prefix: "f", label: "Test Woman")) { account in
+                    ForEach(Self.accounts(prefix: "f", names: Self.femaleNames)) { account in
                         row(account)
                     }
                 }
                 Section("Men") {
-                    ForEach(Self.accounts(prefix: "m", label: "Test Man")) { account in
+                    ForEach(Self.accounts(prefix: "m", names: Self.maleNames)) { account in
                         row(account)
                     }
                 }
@@ -84,10 +84,23 @@ struct TestLoginPicker: View {
         var id: String { email }
     }
 
-    private static func accounts(prefix: String, label: String) -> [TestAccount] {
-        (1...20).map { n in
-            let nn = String(format: "%02d", n)
-            return TestAccount(email: "seed-\(prefix)-\(nn)@yentl.test", label: "\(label) \(nn)")
+    // Mirrors the names in supabase/dev/name_seed_profiles.sql so the picker
+    // shows the same display names (e.g. "Kanyin" = seed-f-07).
+    private static let femaleNames = [
+        "Olivia", "Maya", "Sofia", "Aisha", "Hannah", "Noa", "Kanyin", "Emma",
+        "Leila", "Yara", "Chloe", "Mia", "Tamar", "Zoe", "Amara", "Isabella",
+        "Priya", "Nina", "Grace", "Ava"
+    ]
+    private static let maleNames = [
+        "Liam", "Noah", "Ethan", "Omar", "Daniel", "Lucas", "Adam", "Mateo",
+        "Eitan", "Yusuf", "Caleb", "Leo", "David", "Aaron", "Kofi", "James",
+        "Arjun", "Ben", "Marco", "Theo"
+    ]
+
+    private static func accounts(prefix: String, names: [String]) -> [TestAccount] {
+        names.enumerated().map { index, name in
+            let nn = String(format: "%02d", index + 1)
+            return TestAccount(email: "seed-\(prefix)-\(nn)@yentl.test", label: name)
         }
     }
 }

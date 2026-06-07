@@ -13,12 +13,16 @@
 -- empty-state Boost/Skip steer. Widen the band or the `rn <= 14` to taste.
 
 with m as (
-    select id, row_number() over (order by display_name) as rn
-    from public.profiles where display_name like 'Test Man%'
+    select p.id, row_number() over (order by p.display_name) as rn
+    from public.profiles p
+    join auth.users u on u.id = p.id
+    where u.email like 'seed-%@yentl.test' and p.gender = 'male'
 ),
 f as (
-    select id, row_number() over (order by display_name) as rn
-    from public.profiles where display_name like 'Test Woman%'
+    select p.id, row_number() over (order by p.display_name) as rn
+    from public.profiles p
+    join auth.users u on u.id = p.id
+    where u.email like 'seed-%@yentl.test' and p.gender = 'female'
 ),
 pairs as (
     select m.id as mid, f.id as fid
