@@ -125,6 +125,9 @@ private struct ProfileTab: View {
     @Environment(AuthService.self) private var auth
     @State private var showingEdit = false
     @State private var reloadID = 0
+    #if DEBUG
+    @State private var showingTestLogin = false
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -143,6 +146,11 @@ private struct ProfileTab: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Edit") { showingEdit = true }
                 }
+                #if DEBUG
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showingTestLogin = true } label: { Image(systemName: "ladybug") }
+                }
+                #endif
                 ToolbarItem(placement: .topBarTrailing) {
                     SignOutButton()
                 }
@@ -154,6 +162,11 @@ private struct ProfileTab: View {
                 reloadID += 1
             })
         }
+        #if DEBUG
+        .sheet(isPresented: $showingTestLogin) {
+            TestLoginPicker(onSwitched: { showingTestLogin = false })
+        }
+        #endif
     }
 }
 

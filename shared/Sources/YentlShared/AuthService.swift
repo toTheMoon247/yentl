@@ -75,6 +75,19 @@ public final class AuthService {
         }
     }
 
+    /// Email/password sign-in. Email/password isn't part of the normal product
+    /// flow (we ship Apple + Google), but the provider is enabled in Supabase
+    /// and this powers the DEBUG-only "test account" picker, so a developer can
+    /// sign in as a seeded user to test both sides of the app.
+    public func signInWithEmail(_ email: String, password: String) async throws {
+        do {
+            _ = try await Backend.supabase.auth.signIn(email: email, password: password)
+        } catch {
+            if error is CancellationError { throw error }
+            throw AuthError.unexpected(error)
+        }
+    }
+
     /// Stub: throws until the Apple Developer Program is active.
     ///
     /// Tracked in `docs/implementation-plan.md` Phase 8 — the App Store
