@@ -176,3 +176,56 @@ Performance:
 
 - Start **Phase 5 — Matchmaker Queue & Decision Panel** (the core differentiator): `matchmaking_queue` (M/F alternation), the swipe-style Decision Panel (pinned user + candidate viewer, candidates ordered by who already liked them), internal notes, percentile fields, and the first-encounter matchmaker-assigned attractiveness rating.
 - Resolve the open Phase 5 question on candidate ordering once the "liked-you" pool is exhausted.
+
+---
+
+## Day 6 — 2026-06-05 → 2026-06-06
+
+**Today.** Kicked off **Phase 5 — Matchmaker Queue & Decision Panel**, locked its shape over a couple of design calls, and built Slice 1 (queue + mutual-like panel) plus the seed tooling to test it.
+
+Planning decisions (with the user):
+
+- **Candidates = MUTUAL likes** (a like in *both* directions), not one-directional "liked-you" with a fallback. The matchmaker curates among people who already mutually like each other — cleaner and more defensible. This mooted the old "ordering after the liked-you pool" question.
+- **Cut internal notes** — free-text notes on people risk turning the tool into a CRM / storing subjective commentary.
+- **Empty candidate state is a decision:** show a diagnostic (likes *received* vs *given*) → **Boost** if not receiving (visibility problem), **Skip/Next** if not giving (engagement problem boosting can't fix). Boost is surfaced now, wired in Phase 10.
+- **Cut the compatibility indicator** — mutual-like is already the strongest fit signal.
+
+Slice 1 build:
+
+- `matchmaking_queue` (M/F alternation) with an enqueue-on-go-live trigger + backfill; staff-only **security-definer RPCs**: `next_queued_user`, `matchmaker_candidates` (mutual self-join on `swipes`), `matchmaker_like_stats`, `skip_queued_user`. `MatchmakerService` in the shared package. Migration `20260605203625`.
+- Initial Decision Panel (text list) + a Review/Profiles tab bar in the matchmaker app.
+- Dev: `seed_mutual_likes.sql` to create mutual pairs (with the `'like'::swipe_action` cast), then a denser sliding-band version so test users have 2–4 mutuals to exercise the candidate carousel.
+
+**Progress.** Phase 5 skeleton works end to end: pin the front-of-queue user, see their mutual candidates, skip, and get the empty-state steer.
+
+**Steps for tomorrow.**
+
+- Rework the panel toward the designer's card layout and close Phase 5.
+
+---
+
+## Day 7 — 2026-06-06 → 2026-06-07
+
+**Today.** Reworked the Decision Panel into the card design from the mockup, polished it, fixed two bugs, trimmed scope, and **closed Phase 5 → `v0.5.0`**.
+
+UI rework (from the user's mockup):
+
+- **Card-based Decision Panel:** a pinned-user photo card (PINNED USER badge + info overlay), **Match / Boost** buttons (stubbed → Phases 6 / 10), and a **swipeable candidate carousel** ("Candidate X of N" + arrows) for the mutual matches; tap a card → full profile sheet. Confirmed *no* new profile fields — the designer's kids/education/religion/job were just placeholders.
+- Repurposed **Profiles → Queue tab** (`queued_profiles` RPC) showing the pin order with an "Up next" marker.
+- Renamed **Skip → "Next profile"** and made it **non-destructive** (`requeue_user` sends the user to the back of the queue). Migration `20260606071144`.
+- Fixed the garbled "n" sign-out button → a **person-icon account menu** (the crowded nav bar was squeezing the text button).
+
+Bug fixes:
+
+- Matchmaker panel photos lagged like discovery used to — **moved `CachedImage`/`ImageCache` into `YentlShared`** (UIKit-guarded so the package's macOS build is fine) so both apps share it; panel photos now load instantly.
+- "Something went wrong (CancellationError)" on the panel — a transient `.task` cancellation during the role-gate → tab transition. Services now rethrow `CancellationError` **unwrapped** and the panel ignores it, so the successful reload stands.
+
+Scope:
+
+- **Deferred all of Slice 2** — the matchmaker attractiveness rating *and* the height/income/activity percentiles → post-MVP. The rating is subjective and needs cross-matchmaker calibration (a stored "hotness score" is a liability in early testing); the percentiles are decision-aids only (the panel already shows raw height/income). That closes Phase 5 at one slice.
+
+**Progress.** **Phases 0–5 complete**; `v0.1.0`–`v0.5.0` tagged, all CI-green. The matchmaker can review mutual-like candidates — but can't yet *act*. Network dropped briefly mid-session; nothing was lost (the in-flight commit had already pushed).
+
+**Steps for tomorrow.**
+
+- Start **Phase 6 — Match Creation & Confirmation** (the payoff): `matches` table; the Decision Panel's **Match** button creates a match; the 24-hour confirmation clock; accept/reject + the **"ignored = rejected"** rule; queue updates on outcome; and the match UI on both users' side in Yentl.
