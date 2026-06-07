@@ -49,6 +49,9 @@ struct DecisionPanelView: View {
     @State private var isLoading = true
     @State private var isAdvancing = false
     @State private var errorMessage: String?
+    /// A non-fatal action failure (e.g. trying to match someone who already has
+    /// a pending match) — shown as an alert so the panel stays put.
+    @State private var matchError: String?
     @State private var phaseNote: String?
     @State private var inspected: Profile?
 
@@ -91,6 +94,15 @@ struct DecisionPanelView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Both will be asked to confirm within 24 hours.")
+            }
+            .alert(
+                "Couldn't create match",
+                isPresented: Binding(get: { matchError != nil },
+                                     set: { if !$0 { matchError = nil } })
+            ) {
+                Button("OK", role: .cancel) { matchError = nil }
+            } message: {
+                if let matchError { Text(matchError) }
             }
     }
 
@@ -320,7 +332,8 @@ struct DecisionPanelView: View {
             await load()
         } catch is CancellationError {
         } catch {
-            errorMessage = error.localizedDescription
+            // Non-fatal — keep the panel up and surface it as an alert.
+            matchError = error.localizedDescription
         }
     }
 

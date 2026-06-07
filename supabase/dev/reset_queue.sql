@@ -6,17 +6,19 @@
 --      New seeds and every "Next profile" set enqueued_at = now(), so the men
 --      pile up at the back and you see all the women first. This re-staggers the
 --      active queue so it interleaves F, M, F, M again.
---   2) Some users never appear (e.g. skipped long ago, or stuck 'matched' from a
---      test). This reactivates them so everyone is reachable again.
+--   2) Some users never appear because they were skipped long ago. This
+--      reactivates them so everyone is reachable again. ('matched' users are
+--      left out on purpose — they're in a pending match; use reset_matches.sql
+--      to clear matches and free them.)
 --
 -- Run in the Studio SQL editor against DEV. Re-run after adding seeds or after a
--- lot of skipping/matching. (Jump-to-pin in the Queue tab also reaches anyone
--- directly, regardless of order.)
+-- lot of skipping. (Jump-to-pin in the Queue tab also reaches anyone directly,
+-- regardless of order.)
 
--- Reactivate everyone who fell out of the active queue.
+-- Reactivate users that were skipped (but not ones in a pending match).
 update public.matchmaking_queue
 set status = 'active', skipped_at = null, updated_at = now()
-where status <> 'active';
+where status = 'skipped';
 
 -- Interleave the two genders by per-gender FIFO rank: rank-1 female, rank-1
 -- male, rank-2 female, ... Spread one second apart, an hour back, so new live
