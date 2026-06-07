@@ -45,10 +45,10 @@ from (
 ------------------------------------------------------------------------
 -- 2) Seed completed, live profiles for those users.
 ------------------------------------------------------------------------
--- Real gendered names by index; women[7] is Kanyin to match the pinned photo.
+-- Real gendered names by email number; women[5] is Kanyin to match her photo.
 with female_names(ord, name) as (values
-    (1, 'Olivia'), (2, 'Maya'), (3, 'Sofia'), (4, 'Aisha'), (5, 'Hannah'),
-    (6, 'Noa'), (7, 'Kanyin'), (8, 'Emma'), (9, 'Leila'), (10, 'Yara'),
+    (1, 'Olivia'), (2, 'Maya'), (3, 'Sofia'), (4, 'Aisha'), (5, 'Kanyin'),
+    (6, 'Noa'), (7, 'Hannah'), (8, 'Emma'), (9, 'Leila'), (10, 'Yara'),
     (11, 'Chloe'), (12, 'Mia'), (13, 'Tamar'), (14, 'Zoe'), (15, 'Amara'),
     (16, 'Isabella'), (17, 'Priya'), (18, 'Nina'), (19, 'Grace'), (20, 'Ava')
 ),

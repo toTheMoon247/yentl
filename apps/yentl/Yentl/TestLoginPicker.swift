@@ -84,10 +84,11 @@ struct TestLoginPicker: View {
         var id: String { email }
     }
 
-    // Mirrors the names in supabase/dev/name_seed_profiles.sql so the picker
-    // shows the same display names (e.g. "Kanyin" = seed-f-07).
+    // Mirrors the names in supabase/dev/name_seed_profiles.sql, which assigns by
+    // email number — so index N here == seed-?-0N's display name (e.g. "Kanyin"
+    // is #5 == seed-f-05, the profile that holds Kanyin.jpg).
     private static let femaleNames = [
-        "Olivia", "Maya", "Sofia", "Aisha", "Hannah", "Noa", "Kanyin", "Emma",
+        "Olivia", "Maya", "Sofia", "Aisha", "Kanyin", "Noa", "Hannah", "Emma",
         "Leila", "Yara", "Chloe", "Mia", "Tamar", "Zoe", "Amara", "Isabella",
         "Priya", "Nina", "Grace", "Ava"
     ]

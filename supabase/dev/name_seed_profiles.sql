@@ -1,17 +1,17 @@
 -- Dev-only: give the existing seeded profiles real gendered names (in place —
 -- keeps their IDs, photos, mutual likes, passwords intact).
 --
--- Women get women's names, men get men's names, assigned by current order
--- (Test Woman 01 -> 1st name, etc.). Position 7 of the women is "Kanyin",
--- which is the profile that received Kanyin.jpg during the photo upload
--- (it was pinned to the 7th woman), so her name and photo match.
+-- Names are assigned by the EMAIL NUMBER (seed-f-05 -> woman name #5), so the
+-- mapping is deterministic and matches both seed_profiles.sql and the DEBUG
+-- login picker. "Kanyin" is name #5 -> seed-f-05, which is the profile that
+-- already holds Kanyin.jpg, so her name and photo line up with no re-upload.
 --
--- Seeds are identified by email (seed-%@yentl.test), so this still works after
--- the names change. Run in the Studio SQL editor against DEV.
+-- Seeds are identified by email (seed-%@yentl.test). Run in the Studio SQL
+-- editor against DEV. Re-running just re-sets the names (idempotent).
 
 with female_names(ord, name) as (values
-    (1, 'Olivia'), (2, 'Maya'), (3, 'Sofia'), (4, 'Aisha'), (5, 'Hannah'),
-    (6, 'Noa'), (7, 'Kanyin'), (8, 'Emma'), (9, 'Leila'), (10, 'Yara'),
+    (1, 'Olivia'), (2, 'Maya'), (3, 'Sofia'), (4, 'Aisha'), (5, 'Kanyin'),
+    (6, 'Noa'), (7, 'Hannah'), (8, 'Emma'), (9, 'Leila'), (10, 'Yara'),
     (11, 'Chloe'), (12, 'Mia'), (13, 'Tamar'), (14, 'Zoe'), (15, 'Amara'),
     (16, 'Isabella'), (17, 'Priya'), (18, 'Nina'), (19, 'Grace'), (20, 'Ava')
 ),
@@ -22,8 +22,9 @@ male_names(ord, name) as (values
     (16, 'James'), (17, 'Arjun'), (18, 'Ben'), (19, 'Marco'), (20, 'Theo')
 ),
 seeds as (
+    -- ord = the NN in seed-f-NN / seed-m-NN, so names key off the email number.
     select p.id, p.gender,
-           row_number() over (partition by p.gender order by p.display_name) as ord
+           split_part(split_part(u.email, '-', 3), '@', 1)::int as ord
     from public.profiles p
     join auth.users u on u.id = p.id
     where u.email like 'seed-%@yentl.test'
