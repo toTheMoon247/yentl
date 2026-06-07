@@ -32,6 +32,21 @@ struct TestLoginPicker: View {
                 if let errorMessage {
                     Section { Text(errorMessage).foregroundStyle(.red).font(.caption) }
                 }
+                if let realEmail = savedRealEmail {
+                    Section("My account") {
+                        Button {
+                            Task { await switchBackToReal() }
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.uturn.backward")
+                                Text(realEmail)
+                                Spacer()
+                                if working == realEmail { ProgressView() }
+                            }
+                        }
+                        .disabled(working != nil)
+                    }
+                }
                 Section("Women") {
                     ForEach(Self.accounts(prefix: "f", names: Self.femaleNames)) { account in
                         row(account)
@@ -69,6 +84,16 @@ struct TestLoginPicker: View {
         errorMessage = nil
         defer { working = nil }
         do {
+            // Before impersonating a seed, snapshot the real (non-seed) account
+            // so the "My account" row can restore it without redoing OAuth.
+            if let current = auth.currentUserEmail,
+               !current.contains("@yentl.test"),
+               let tokens = await auth.currentSessionTokens() {
+                let defaults = UserDefaults.standard
+                defaults.set(tokens.accessToken, forKey: Self.kAccessToken)
+                defaults.set(tokens.refreshToken, forKey: Self.kRefreshToken)
+                defaults.set(current, forKey: Self.kRealEmail)
+            }
             // signInWithEmail replaces the current session — don't sign out
             // first, or a failed sign-in would leave us logged out.
             try await auth.signInWithEmail(email, password: Self.password)
@@ -77,6 +102,31 @@ struct TestLoginPicker: View {
             errorMessage = "Couldn't sign in as \(email): \(error.localizedDescription)"
         }
     }
+
+    /// Restore the real (Google) account from the snapshotted tokens.
+    private func switchBackToReal() async {
+        let defaults = UserDefaults.standard
+        guard let accessToken = defaults.string(forKey: Self.kAccessToken),
+              let refreshToken = defaults.string(forKey: Self.kRefreshToken),
+              let email = defaults.string(forKey: Self.kRealEmail) else { return }
+        working = email
+        errorMessage = nil
+        defer { working = nil }
+        do {
+            try await auth.restoreSession(accessToken: accessToken, refreshToken: refreshToken)
+            onSwitched()
+        } catch {
+            errorMessage = "Couldn't switch back to \(email): \(error.localizedDescription)"
+        }
+    }
+
+    private var savedRealEmail: String? {
+        UserDefaults.standard.string(forKey: Self.kRealEmail)
+    }
+
+    private static let kAccessToken = "debug.realAccount.accessToken"
+    private static let kRefreshToken = "debug.realAccount.refreshToken"
+    private static let kRealEmail = "debug.realAccount.email"
 
     private struct TestAccount: Identifiable {
         let email: String

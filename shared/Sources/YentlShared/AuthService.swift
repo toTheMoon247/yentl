@@ -165,6 +165,37 @@ public final class AuthService {
         }
     }
 
+    #if DEBUG
+    // MARK: - DEBUG test-account switching
+
+    /// The signed-in user's email. Used by the DEBUG test-login picker to tell
+    /// the real (Google) account apart from seeded `@yentl.test` accounts.
+    public var currentUserEmail: String? {
+        if case .signedIn(let user) = state { return user.email }
+        return nil
+    }
+
+    /// Snapshot the current session's tokens so the picker can return to the
+    /// real account later without re-running Google OAuth. Nil if signed out.
+    public func currentSessionTokens() async -> (accessToken: String, refreshToken: String)? {
+        guard let session = try? await Backend.supabase.auth.session else { return nil }
+        return (session.accessToken, session.refreshToken)
+    }
+
+    /// Restore a session from previously snapshotted tokens (refreshing if the
+    /// access token has expired) — the inverse of impersonating a seed.
+    public func restoreSession(accessToken: String, refreshToken: String) async throws {
+        do {
+            _ = try await Backend.supabase.auth.setSession(
+                accessToken: accessToken, refreshToken: refreshToken
+            )
+        } catch {
+            if error is CancellationError { throw error }
+            throw AuthError.unexpected(error)
+        }
+    }
+    #endif
+
     // MARK: - Private
 
     /// Hydrates initial state then listens for changes from Supabase Auth.
