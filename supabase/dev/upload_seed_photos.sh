@@ -21,9 +21,9 @@
 #   export SUPABASE_SERVICE_ROLE_KEY="eyJ..."
 #   ./supabase/dev/upload_seed_photos.sh "/Users/me/Desktop/script photos"
 #
-# Re-running is safe: each seeded profile's existing photo rows are deleted
-# first, so you always end up with exactly one photo per profile. (Old storage
-# files orphan harmlessly — see supabase/dev/reset.sql.)
+# Re-running is safe and clean: each seeded profile's existing photo rows AND
+# its stored files are deleted first, so you always end up with exactly one
+# photo per profile and no orphaned images accumulating in the bucket.
 
 # No `set -e`: each request's HTTP status is checked and we `continue` on
 # failure, so one bad photo never aborts the rest. `-u` still catches typos.
@@ -64,6 +64,27 @@ upload_one() {
   echo "  [$tag] $user_id  <-  $(basename "$file")"
 }
 
+# Delete every stored object under a profile's folder. The DB-row delete alone
+# leaves the files behind, so without this re-runs pile up orphaned images and a
+# given folder ends up holding several different people's photos.
+purge_folder() {
+  local uid="$1"
+  local list names n prefixes=""
+  list=$(curl -s -X POST "$SUPABASE_URL/storage/v1/object/list/$BUCKET" \
+    -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H "Content-Type: application/json" \
+    -d "{\"prefix\":\"$uid/\",\"limit\":1000}")
+  names=$(echo "$list" | grep -o '"name":"[^"]*"' | sed 's/"name":"//; s/"$//')
+  [ -z "$names" ] && return
+  while IFS= read -r n; do
+    [ -z "$n" ] && continue
+    prefixes="$prefixes\"$uid/$n\","
+  done <<< "$names"
+  [ -z "$prefixes" ] && return
+  curl -s -X DELETE "$SUPABASE_URL/storage/v1/object/$BUCKET" \
+    -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H "Content-Type: application/json" \
+    -d "{\"prefixes\":[${prefixes%,}]}" >/dev/null
+}
+
 upload_for_gender() {
   local gender="$1" subdir="$2" pin_file="${3:-}" pin_name="${4:-}"
   local dir="$FOLDER/$subdir"
@@ -92,12 +113,15 @@ upload_for_gender() {
   done < <(find "$dir" -maxdepth 1 -type f \
     \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) | sort)
 
-  # Clean existing photo rows for these seeds (idempotent re-runs).
+  # Clean existing photos for these seeds (idempotent re-runs): delete the DB
+  # rows AND purge each folder's storage objects, so nothing piles up.
   if [ "${#ids[@]}" -gt 0 ]; then
     local id_list; id_list="$(IFS=,; echo "${ids[*]}")"
     curl -s -X DELETE \
       "$SUPABASE_URL/rest/v1/profile_photos?user_id=in.($id_list)" \
       -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Prefer: return=minimal" >/dev/null
+    local p
+    for (( p=0; p<${#ids[@]}; p++ )); do purge_folder "${ids[$p]}"; done
   fi
 
   # Optional pin: attach a specific photo file to the profile of a given name.
