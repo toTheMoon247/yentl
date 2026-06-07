@@ -18,7 +18,10 @@ import YentlShared
 struct DecisionPanelView: View {
     @Environment(MatchmakerService.self) private var matchmaker
     @Environment(ProfileService.self) private var profiles
+    @Environment(MatchService.self) private var matches
 
+    @State private var isMatching = false
+    @State private var confirmingMatch = false
     @State private var pinnedID: UUID?
     @State private var pinned: Profile?
     @State private var candidates: [Profile] = []
@@ -71,6 +74,20 @@ struct DecisionPanelView: View {
                             }
                     }
                 }
+                .confirmationDialog(
+                    "Create match?",
+                    isPresented: $confirmingMatch,
+                    titleVisibility: .visible
+                ) {
+                    if let pinned, let candidate = currentCandidate {
+                        Button("Match \(pinned.displayName) with \(candidate.displayName)") {
+                            Task { await createMatch() }
+                        }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Both will be asked to confirm within 24 hours.")
+                }
         }
     }
 
@@ -105,10 +122,11 @@ struct DecisionPanelView: View {
 
     private var actionButtons: some View {
         HStack(spacing: DesignTokens.Spacing.md) {
-            Button { phaseNote = "Match creation lands in Phase 6." } label: {
+            Button { confirmingMatch = true } label: {
                 Label("Match", systemImage: "checkmark.circle").frame(maxWidth: .infinity)
             }
             .tint(.green)
+            .disabled(candidates.isEmpty || isMatching)
             Button { phaseNote = "Boost lands in Phase 10." } label: {
                 Label("Boost", systemImage: "bolt.fill").frame(maxWidth: .infinity)
             }
@@ -116,6 +134,10 @@ struct DecisionPanelView: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.large)
+    }
+
+    private var currentCandidate: Profile? {
+        candidates.indices.contains(candidateIndex) ? candidates[candidateIndex] : nil
     }
 
     @ViewBuilder
@@ -244,6 +266,19 @@ struct DecisionPanelView: View {
                   let url = try? await profiles.signedPhotoURL(for: first.storagePath) else { continue }
             photoURLs[person.id] = url
             Task { await ImageCache.shared.load(url) }
+        }
+    }
+
+    private func createMatch() async {
+        guard let pinnedID, let candidate = currentCandidate else { return }
+        isMatching = true
+        defer { isMatching = false }
+        do {
+            try await matches.createMatch(pinnedID, candidate.id)
+            await load()
+        } catch is CancellationError {
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

@@ -195,4 +195,5 @@ private struct RoleFetchErrorView: View {
         .environment(AuthService.shared)
         .environment(ProfileService.shared)
         .environment(MatchmakerService.shared)
+        .environment(MatchService.shared)
 }

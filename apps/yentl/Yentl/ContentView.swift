@@ -111,6 +111,8 @@ private struct SignedInHomeView: View {
         TabView {
             DiscoveryView()
                 .tabItem { Label("Discover", systemImage: "sparkles") }
+            MatchesView()
+                .tabItem { Label("Matches", systemImage: "heart") }
             ProfileTab()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }
@@ -160,4 +162,5 @@ private struct ProfileTab: View {
         .environment(AuthService.shared)
         .environment(ProfileService.shared)
         .environment(DiscoveryService.shared)
+        .environment(MatchService.shared)
 }
