@@ -69,7 +69,8 @@ struct TestLoginPicker: View {
         errorMessage = nil
         defer { working = nil }
         do {
-            try? await auth.signOut()
+            // signInWithEmail replaces the current session — don't sign out
+            // first, or a failed sign-in would leave us logged out.
             try await auth.signInWithEmail(email, password: Self.password)
             onSwitched()
         } catch {

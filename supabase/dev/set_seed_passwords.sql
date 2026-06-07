@@ -11,3 +11,11 @@ update auth.users
 set encrypted_password = extensions.crypt('yentltest', extensions.gen_salt('bf')),
     email_confirmed_at = coalesce(email_confirmed_at, now())
 where email like 'seed-%@yentl.test';
+
+-- Mark seeds as onboarded so switching to one lands straight in the app
+-- (Discover / Matches) instead of the onboarding flow.
+update public.users
+set onboarding_completed_at = coalesce(onboarding_completed_at, now()),
+    terms_accepted_at       = coalesce(terms_accepted_at, now()),
+    age_confirmed_at        = coalesce(age_confirmed_at, now())
+where id in (select id from auth.users where email like 'seed-%@yentl.test');
