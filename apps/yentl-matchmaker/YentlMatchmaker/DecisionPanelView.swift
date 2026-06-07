@@ -20,6 +20,24 @@ struct DecisionPanelView: View {
     @Environment(ProfileService.self) private var profiles
     @Environment(MatchService.self) private var matches
 
+    /// When non-nil (opened by tapping a Queue row), the first load pins this
+    /// specific user instead of the front of the queue. Consumed after one load,
+    /// so Match / Next profile then continue with the normal queue.
+    private let isRoot: Bool
+    @State private var pendingOverride: UUID?
+
+    /// Root (Review tab) panel: pins the front of the queue.
+    init() {
+        self.isRoot = true
+        _pendingOverride = State(initialValue: nil)
+    }
+
+    /// Jump-to-pin: opened from the Queue tab to review a specific user.
+    init(pinnedUserID: UUID) {
+        self.isRoot = false
+        _pendingOverride = State(initialValue: pinnedUserID)
+    }
+
     @State private var isMatching = false
     @State private var confirmingMatch = false
     @State private var pinnedID: UUID?
@@ -35,59 +53,74 @@ struct DecisionPanelView: View {
     @State private var inspected: Profile?
 
     var body: some View {
-        NavigationStack {
-            content
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Menu {
-                            SignOutButton()
-                        } label: {
-                            Image(systemName: "person.crop.circle")
-                                .font(.title3)
-                        }
-                    }
-                    ToolbarItem(placement: .principal) {
-                        VStack(spacing: 0) {
-                            Text("Review").font(.headline)
-                            Text("Decision Panel")
-                                .font(.caption2)
-                                .foregroundStyle(DesignTokens.Palette.textSecondary)
-                        }
-                    }
-                    if pinnedID != nil {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Next profile") { Task { await advance() } }
-                                .disabled(isAdvancing)
-                        }
-                    }
-                }
-                .task { await load() }
-                .sheet(item: $inspected) { profile in
-                    NavigationStack {
-                        ProfileScreen(userID: profile.id, showHiddenFields: true)
-                            .navigationTitle(profile.displayName)
-                            .navigationBarTitleDisplayMode(.inline)
-                            .toolbar {
-                                ToolbarItem(placement: .topBarTrailing) {
-                                    Button("Close") { inspected = nil }
-                                }
+        if isRoot {
+            NavigationStack { panel }
+        } else {
+            panel
+        }
+    }
+
+    private var panel: some View {
+        content
+            .navigationTitle(isRoot ? "" : "Decision Panel")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .task { await load() }
+            .sheet(item: $inspected) { profile in
+                NavigationStack {
+                    ProfileScreen(userID: profile.id, showHiddenFields: true)
+                        .navigationTitle(profile.displayName)
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Close") { inspected = nil }
                             }
-                    }
-                }
-                .confirmationDialog(
-                    "Create match?",
-                    isPresented: $confirmingMatch,
-                    titleVisibility: .visible
-                ) {
-                    if let pinned, let candidate = currentCandidate {
-                        Button("Match \(pinned.displayName) with \(candidate.displayName)") {
-                            Task { await createMatch() }
                         }
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Both will be asked to confirm within 24 hours.")
                 }
+            }
+            .confirmationDialog(
+                "Create match?",
+                isPresented: $confirmingMatch,
+                titleVisibility: .visible
+            ) {
+                if let pinned, let candidate = currentCandidate {
+                    Button("Match \(pinned.displayName) with \(candidate.displayName)") {
+                        Task { await createMatch() }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Both will be asked to confirm within 24 hours.")
+            }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        // The account menu + "Review" title belong to the root tab only; the
+        // pushed (jump-to-pin) panel gets the navigation back button instead.
+        if isRoot {
+            ToolbarItem(placement: .topBarLeading) {
+                Menu {
+                    SignOutButton()
+                } label: {
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
+                }
+            }
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
+                    Text("Review").font(.headline)
+                    Text("Decision Panel")
+                        .font(.caption2)
+                        .foregroundStyle(DesignTokens.Palette.textSecondary)
+                }
+            }
+        }
+        if pinnedID != nil {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Next profile") { Task { await advance() } }
+                    .disabled(isAdvancing)
+            }
         }
     }
 
@@ -236,7 +269,16 @@ struct DecisionPanelView: View {
         photoURLs = [:]
         defer { isLoading = false }
         do {
-            guard let id = try await matchmaker.nextQueuedUser() else {
+            // First load of a jump-to-pin pins the chosen user; afterwards (and
+            // always for the root tab) fall back to the front of the queue.
+            let targetID: UUID?
+            if let override = pendingOverride {
+                targetID = override
+                pendingOverride = nil
+            } else {
+                targetID = try await matchmaker.nextQueuedUser()
+            }
+            guard let id = targetID else {
                 pinnedID = nil
                 return
             }

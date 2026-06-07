@@ -72,7 +72,8 @@ private struct MatchmakerHomeView: View {
     }
 }
 
-/// The matchmaking queue in pin order (who's up next), tap to open a profile.
+/// The matchmaking queue in pin order (who's up next). Tapping a row opens that
+/// person's Decision Panel pinned (jump-to-pin), not just a read-only profile.
 private struct QueueTab: View {
     @Environment(MatchmakerService.self) private var matchmaker
 
@@ -95,9 +96,7 @@ private struct QueueTab: View {
                 } else {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, profile in
                         NavigationLink {
-                            ProfileScreen(userID: profile.id, showHiddenFields: true)
-                                .navigationTitle(profile.displayName)
-                                .navigationBarTitleDisplayMode(.inline)
+                            DecisionPanelView(pinnedUserID: profile.id)
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
