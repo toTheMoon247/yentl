@@ -67,22 +67,27 @@ upload_one() {
 # Delete every stored object under a profile's folder. The DB-row delete alone
 # leaves the files behind, so without this re-runs pile up orphaned images and a
 # given folder ends up holding several different people's photos.
+# Echoes the number of files it deleted, so the caller can report progress.
 purge_folder() {
   local uid="$1"
-  local list names n prefixes=""
+  local list names n prefixes="" count=0
   list=$(curl -s -X POST "$SUPABASE_URL/storage/v1/object/list/$BUCKET" \
     -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H "Content-Type: application/json" \
     -d "{\"prefix\":\"$uid/\",\"limit\":1000}")
   names=$(echo "$list" | grep -o '"name":"[^"]*"' | sed 's/"name":"//; s/"$//')
-  [ -z "$names" ] && return
-  while IFS= read -r n; do
-    [ -z "$n" ] && continue
-    prefixes="$prefixes\"$uid/$n\","
-  done <<< "$names"
-  [ -z "$prefixes" ] && return
-  curl -s -X DELETE "$SUPABASE_URL/storage/v1/object/$BUCKET" \
-    -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H "Content-Type: application/json" \
-    -d "{\"prefixes\":[${prefixes%,}]}" >/dev/null
+  if [ -n "$names" ]; then
+    while IFS= read -r n; do
+      [ -z "$n" ] && continue
+      prefixes="$prefixes\"$uid/$n\","
+      count=$(( count + 1 ))
+    done <<< "$names"
+    if [ -n "$prefixes" ]; then
+      curl -s -X DELETE "$SUPABASE_URL/storage/v1/object/$BUCKET" \
+        -H "Authorization: Bearer $KEY" -H "apikey: $KEY" -H "Content-Type: application/json" \
+        -d "{\"prefixes\":[${prefixes%,}]}" >/dev/null
+    fi
+  fi
+  echo "$count"
 }
 
 upload_for_gender() {
@@ -120,8 +125,12 @@ upload_for_gender() {
     curl -s -X DELETE \
       "$SUPABASE_URL/rest/v1/profile_photos?user_id=in.($id_list)" \
       -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Prefer: return=minimal" >/dev/null
-    local p
-    for (( p=0; p<${#ids[@]}; p++ )); do purge_folder "${ids[$p]}"; done
+    local p purged=0 c
+    for (( p=0; p<${#ids[@]}; p++ )); do
+      c=$(purge_folder "${ids[$p]}")
+      purged=$(( purged + c ))
+    done
+    echo "[$gender] purged $purged old storage file(s) from ${#ids[@]} folders."
   fi
 
   # Optional pin: attach a specific photo file to the profile of a given name.
