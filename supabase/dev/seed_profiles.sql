@@ -22,7 +22,11 @@
 insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
-    raw_app_meta_data, raw_user_meta_data
+    raw_app_meta_data, raw_user_meta_data,
+    -- GoTrue reads these into non-optional strings during login; '' not NULL.
+    confirmation_token, recovery_token, email_change,
+    email_change_token_new, email_change_token_current,
+    phone_change, phone_change_token, reauthentication_token
 )
 select
     '00000000-0000-0000-0000-000000000000',
@@ -30,7 +34,8 @@ select
     'authenticated', 'authenticated',
     'seed-' || gender || '-' || lpad(n::text, 2, '0') || '@yentl.test',
     '', now(), now(), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
+    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+    '', '', '', '', '', '', '', ''
 from (
     select 'f' as gender, generate_series(1, 20) as n
     union all
