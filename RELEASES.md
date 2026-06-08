@@ -10,6 +10,10 @@ rollback point if later work breaks something.
 - **Tags are annotated and semver, pre-1.0:** `v0.MINOR.0`. The minor number
   bumps once per milestone. `v1.0.0` is reserved for the first App Store launch
   (Phase 13).
+- **Interim patch tags** (`v0.MINOR.PATCH`) may mark a verified mid-milestone
+  checkpoint — e.g. one slice of a multi-slice phase, plus a substantial round of
+  fixes — when it's a worthwhile rollback point. The next `.0` still marks the
+  full milestone.
 - **A milestone is only tagged when it is verified:** CI is green on the tagged
   commit *and* the milestone's behavior has been exercised (built/run, or
   validated end-to-end where it involves runtime auth/UI).
@@ -32,6 +36,41 @@ git switch -c recover-from-0.1.0 v0.1.0
 commit it points at.
 
 ---
+
+## v0.5.1 — Phase 6 Slice 1: Match Creation & Confirmation (interim) (2026-06-08)
+
+Interim checkpoint: the first slice of Phase 6 plus a round of real fixes shaken
+out by end-to-end testing. CI green; both sides of the match flow exercised
+in-app. (Phase 6 isn't done — see "Not included" below.)
+
+- **Match creation & confirmation (Slice 1):** the matchmaker **Match** button
+  creates a match between the pinned user and a mutual candidate; the consumer
+  **Matches** tab shows the pending match (the other person's profile + a 24h
+  countdown) with **Accept / Reject**; both accept → confirmed, either rejects →
+  not a match. `matches` table + `match_state` enum; participant/staff RLS;
+  `create_match` / `my_matches` / `respond_to_match` security-definer RPCs.
+- **Matchmaker UX:** jump-to-pin (tap a Queue row → that user's Decision Panel
+  pinned, not a read-only profile); a failed match (e.g. user already has a
+  pending match) is a non-fatal alert, so the panel stays put.
+- **Real bugs surfaced by testing, now fixed:**
+  - **Consumer photo RLS:** live profiles' photos were unreadable by normal
+    consumers (the liveness check sub-queried owner/staff-only `profiles`), so
+    discovery showed placeholders for everyone but staff — fixed with a
+    `security definer is_profile_live()`; hidden columns stay locked.
+  - **Queue alternation:** the M/F queue only ever pinned women; switched to
+    FIFO by `enqueued_at` with a re-interleave so it alternates.
+- **Dev/test tooling:** DEBUG test-login picker (sign in as any seed; one-tap
+  **back to my real account** via session restore); real gendered seed names
+  (Kanyin matched to her photo); seed-photo upload made clean (storage purge on
+  re-run + CSV last-row fix); `respond_as_seed` / `reset_queue` / `reset_matches`
+  helpers.
+
+Migrations: `20260607072236_matches`, `20260607123917_queue_fifo_alternation`,
+`20260607194500_live_photo_rls_fix`.
+
+Not included (Phase 6 remaining): 24h auto-expiry / "ignored = rejected"
+(Slice 2); match history + matchmaker recent-matches dashboard (Slice 3); a more
+prominent countdown clock on both sides (tracked).
 
 ## v0.5.0 — Matchmaker Queue & Decision Panel (2026-06-06)
 
