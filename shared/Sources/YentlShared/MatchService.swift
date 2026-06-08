@@ -23,11 +23,19 @@ public final class MatchService {
     private init() {}
 
     /// Creates a pending match between two users (matchmaker). Returns the id.
+    /// `expiresInSeconds` defaults to the build's configured window (short in
+    /// Debug so expiry is testable, 24h in release).
     @discardableResult
-    public func createMatch(_ userOne: UUID, _ userTwo: UUID) async throws -> UUID {
+    public func createMatch(
+        _ userOne: UUID,
+        _ userTwo: UUID,
+        expiresInSeconds: Int = AppConfig.matchExpirySeconds
+    ) async throws -> UUID {
         do {
             return try await Backend.supabase
-                .rpc("create_match", params: CreateParams(userOne: userOne, userTwo: userTwo))
+                .rpc("create_match", params: CreateParams(
+                    userOne: userOne, userTwo: userTwo, expiresInSeconds: expiresInSeconds
+                ))
                 .execute()
                 .value
         } catch {
@@ -64,9 +72,11 @@ public final class MatchService {
     private struct CreateParams: Encodable {
         let userOne: UUID
         let userTwo: UUID
+        let expiresInSeconds: Int
         enum CodingKeys: String, CodingKey {
             case userOne = "user_one"
             case userTwo = "user_two"
+            case expiresInSeconds = "expires_in_seconds"
         }
     }
 
