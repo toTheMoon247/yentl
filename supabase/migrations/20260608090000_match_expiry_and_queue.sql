@@ -5,19 +5,25 @@
 --   so the flow is testable without waiting a day (see YentlShared/AppConfig).
 -- - A pg_cron sweep flips pending matches past their deadline to 'expired'
 --   (silence = rejection) and returns both people to the queue.
--- - When a match ends as rejected or expired, both participants go back to the
---   active queue so they can be matched with someone else. Confirmed matches
---   keep both 'matched' (they're a couple — out of the queue).
+-- - When a match ends as rejected or expired, both participants return to the
+--   active queue, positioned by their OWN response: whoever ACCEPTED goes to the
+--   FRONT (they showed interest and got let down — matched again next), whoever
+--   REJECTED or IGNORED goes to the BACK. Confirmed matches keep both 'matched'
+--   (they're a couple — out of the queue).
 
 -- ---------------------------------------------------------------------------
--- Helper: return a resolved match's two users to the active queue.
+-- Helper: return one resolved-match user to the active queue, positioned by
+-- whether they accepted. Accepted -> a far-past enqueued_at so they sort to the
+-- front (matched again next); rejected/ignored -> now() so they go to the back.
 -- ---------------------------------------------------------------------------
-create or replace function public.return_users_to_queue(uid_a uuid, uid_b uuid)
+create or replace function public.requeue_after_match(uid uuid, accepted boolean)
 returns void language plpgsql security definer set search_path = public as $$
 begin
     update public.matchmaking_queue
-    set status = 'active', enqueued_at = now(), updated_at = now()
-    where user_id in (uid_a, uid_b) and status = 'matched';
+    set status = 'active',
+        enqueued_at = case when accepted then now() - interval '1 year' else now() end,
+        updated_at = now()
+    where user_id = uid and status = 'matched';
 end;
 $$;
 
@@ -88,7 +94,8 @@ begin
     select * into m from public.matches where id = match;
     if m.a_response = 'rejected' or m.b_response = 'rejected' then
         update public.matches set state = 'rejected' where id = match;
-        perform public.return_users_to_queue(m.user_a, m.user_b);
+        perform public.requeue_after_match(m.user_a, coalesce(m.a_response = 'accepted', false));
+        perform public.requeue_after_match(m.user_b, coalesce(m.b_response = 'accepted', false));
     elsif m.a_response = 'accepted' and m.b_response = 'accepted' then
         update public.matches set state = 'confirmed' where id = match;
     end if;
@@ -108,13 +115,20 @@ begin
         update public.matches
         set state = 'expired'
         where state = 'pending' and now() > expires_at
-        returning user_a, user_b
+        returning user_a, user_b, a_response, b_response
+    ),
+    participants as (
+        select user_a as uid, coalesce(a_response = 'accepted', false) as accepted from expired
+        union all
+        select user_b as uid, coalesce(b_response = 'accepted', false) as accepted from expired
     ),
     reactivated as (
         update public.matchmaking_queue q
-        set status = 'active', enqueued_at = now(), updated_at = now()
-        from expired e
-        where q.user_id in (e.user_a, e.user_b) and q.status = 'matched'
+        set status = 'active',
+            enqueued_at = case when p.accepted then now() - interval '1 year' else now() end,
+            updated_at = now()
+        from participants p
+        where q.user_id = p.uid and q.status = 'matched'
         returning q.user_id
     )
     select count(*) into cnt from expired;
@@ -123,7 +137,7 @@ end;
 $$;
 
 revoke execute on function public.create_match(uuid, uuid, int) from public, anon;
-revoke execute on function public.return_users_to_queue(uuid, uuid) from public, anon, authenticated;
+revoke execute on function public.requeue_after_match(uuid, boolean) from public, anon, authenticated;
 revoke execute on function public.expire_stale_matches() from public, anon, authenticated;
 grant execute on function public.create_match(uuid, uuid, int) to authenticated;
 
