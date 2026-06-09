@@ -229,3 +229,54 @@ Scope:
 **Steps for tomorrow.**
 
 - Start **Phase 6 — Match Creation & Confirmation** (the payoff): `matches` table; the Decision Panel's **Match** button creates a match; the 24-hour confirmation clock; accept/reject + the **"ignored = rejected"** rule; queue updates on outcome; and the match UI on both users' side in Yentl.
+
+---
+
+## Day 8 — 2026-06-07 → 2026-06-09
+
+**Today.** A long build-and-debug session: shipped **Phase 6 Slice 1** (match creation + confirmation), chased a chain of real photo/RLS/seed-tooling bugs that surfaced once test-login let us *be* a consumer, fixed matchmaker queue/UX issues, cut an interim **`v0.5.1`** tag, then built **Phase 6 Slice 2** (configurable auto-expiry + asymmetric queue outcomes) — not yet applied/tested.
+
+Phase 6 — Slice 1 (match creation & confirmation):
+
+- `matches` table + `match_state` enum; participant/staff RLS; `create_match` / `my_matches` / `respond_to_match` security-definer RPCs. Matchmaker **Match** button creates a match between the pinned user and a mutual candidate; consumer **Matches** tab shows the pending match (other person's profile + 24h countdown) with **Accept / Reject**. Both accept → confirmed; either rejects → not a match.
+
+Matchmaker UX:
+
+- **Jump-to-pin:** tapping a Queue row now opens *that* user's Decision Panel (pinned), not a read-only profile. Required a second `DecisionPanelView` init (root vs. pinned-override) and conditional nav wrapping.
+- A failed match (e.g. user already has a pending match) is now a **non-fatal alert** — the panel stays put instead of being replaced by an error screen.
+
+Real bugs surfaced by testing (all fixed):
+
+- **Consumer photo RLS:** live profiles' photos were unreadable by normal consumers — the liveness check sub-queried the owner/staff-only `profiles` table *under the caller's RLS*, so everyone but staff saw placeholders in discovery. Fixed with a `security definer is_profile_live()`; hidden columns stay locked. (Confirmed a genuine consumer bug, not seed-only.)
+- **Storage orphan accumulation:** re-running the seed-photo upload left old files behind (cleanup only deleted DB rows), so folders held up to 5 images and some profiles showed the wrong/duplicate photo. Added a `purge_folder` storage sweep on re-run.
+- **CSV last-row drop:** `while IFS= read -r line` dropped the newline-less final row, so the alphabetically-last seed per gender (Zoe) never uploaded. Fixed with `|| [ -n "$line" ]`.
+- **Queue only ever pinned women:** switched to FIFO by `enqueued_at` with a re-interleave so the M/F queue actually alternates.
+
+Dev/test tooling:
+
+- **DEBUG test-login picker:** sign in as any seed (real gendered names now — Kanyin matched to her photo), with one-tap **back to my real account** via stored-token session restore.
+- Email-number-keyed seed naming so picker labels match the DB; `dev_seed_profiles` view; `respond_as_seed` / `reset_queue` (only reactivates `skipped`) / `reset_matches` helpers.
+
+Process — interim tag:
+
+- Cut **`v0.5.1`** (CI green, both sides of the match flow exercised in-app). Recorded a convention allowing **interim patch tags** for a verified mid-phase checkpoint; the next `.0` still marks the full milestone.
+
+Phase 6 — Slice 2 (built, **not yet applied or tested**):
+
+- **Configurable expiry window**, centralized so a release build can't ship a debug value: `AppConfig.matchExpirySeconds` (`#if DEBUG` 5 min / else 24h) → `create_match(…, expires_in_seconds)` → server clamps to [1 min, 7 days], defaults 24h. One source of truth.
+- **Auto-expiry ("ignored = rejected"):** `expire_stale_matches()` flips overdue pending matches to `expired`; a **pg_cron** job runs it every minute (resilient DO-block — degrades to a notice if pg_cron isn't enabled).
+- **Asymmetric queue outcome** (the product rule the user pinned down): on reject/expire, each participant returns to the queue by *their own* response — whoever **accepted** goes to the **front** (matched again next), whoever **rejected/ignored** goes to the **back**. Confirmed matches stay out of the queue. Implemented via `requeue_after_match(uid, accepted)`.
+
+**Progress.** Phase 6 Slice 1 is live and exercised end-to-end; `v0.5.1` is a clean rollback point. Slice 2's migration (`20260608090000`) is written and CI-green but **has not been pushed to the DB or run through a real expiry yet** — that's the first thing tomorrow.
+
+**Steps for tomorrow.**
+
+- ⚠️ **TEST Phase 6 Slice 2 (do this first):**
+  1. `supabase db push` to apply `20260608090000`. If it prints a `pg_cron not scheduled` notice, enable **pg_cron** (Dashboard → Database → Extensions) and re-run the cron block. Verify: `select jobname, schedule, active from cron.job where jobname='expire-stale-matches';`.
+  2. Clean slate in the SQL editor: run `reset_matches.sql` then `reset_queue.sql`.
+  3. **Create a match** (Debug matchmaker build → Review tab → pinned user has a candidate → **Match**). Note the two names (A = pinned, B = candidate).
+  4. **Accept on one side only** (consumer app, 🐞 → switch to A → Matches → **Accept**); leave B alone (B "ignores").
+  5. **Force the expiry instantly** instead of waiting 5 min: `update public.matches set expires_at = now() - interval '1 minute' where state='pending'; select public.expire_stale_matches();` (should return 1).
+  6. **Verify three things:** (a) consumer A's Matches shows **"This match expired."**; (b) the queue order — A (accepted) at the **front**, B (ignored) at the **back**; (c) `select status, count(*) from matchmaking_queue group by status;` shows **no rows `matched`**. Variations: both-ignore → both to back; explicit reject (B taps Pass) → same rule, no timer.
+- Then **Phase 6 Slice 3:** per-user match history + matchmaker recent-matches dashboard → tag **`v0.6.0`** when verified.
+- **Tracked (memory `match-24h-countdown-ui`):** make the consumer countdown more clock-like and add a matchmaker-side timer — fold in with the expiry polish.
