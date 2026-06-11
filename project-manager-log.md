@@ -280,3 +280,19 @@ Phase 6 — Slice 2 (built, **not yet applied or tested**):
   6. **Verify three things:** (a) consumer A's Matches shows **"This match expired."**; (b) the queue order — A (accepted) at the **front**, B (ignored) at the **back**; (c) `select status, count(*) from matchmaking_queue group by status;` shows **no rows `matched`**. Variations: both-ignore → both to back; explicit reject (B taps Pass) → same rule, no timer.
 - Then **Phase 6 Slice 3:** per-user match history + matchmaker recent-matches dashboard → tag **`v0.6.0`** when verified.
 - **Tracked (memory `match-24h-countdown-ui`):** make the consumer countdown more clock-like and add a matchmaker-side timer — fold in with the expiry polish.
+
+---
+
+## Day 9 — 2026-06-10 → 2026-06-11
+
+**What we did today.**
+
+- Built an automated test suite for the new match-expiry feature — the "ignore a match too long and it counts as a no" rule, and who goes back to the front vs. the back of the line afterward. These now run by themselves on every change, so we catch problems without re-checking everything by hand.
+- All the tests passed and our automated build is green.
+- Turned the expiry feature on in the live app's database.
+
+**Steps for tomorrow.**
+
+- **Still owed — the one hands-on test (not started yet):** confirm the once-a-minute background job is actually running on the live database, and that an expired match shows "This match expired." in the app.
+- Then start the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
+- Small polish, still on the list: a clearer countdown clock for users (and maybe for the matchmaker too).
