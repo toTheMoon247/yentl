@@ -69,7 +69,7 @@ public final class MatchService {
         }
     }
 
-    private struct CreateParams: Encodable {
+    struct CreateParams: Encodable {
         let userOne: UUID
         let userTwo: UUID
         let expiresInSeconds: Int

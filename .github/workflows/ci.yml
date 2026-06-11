@@ -69,3 +69,23 @@ jobs:
         run: brew install swiftlint
       - name: Lint
         run: swiftlint
+
+  db-tests:
+    name: Supabase pgTAP Tests
+    # Linux runner: the local Supabase stack runs on Docker, which the macOS
+    # runners don't provide. Exercises the migrations + RPCs against a real
+    # Postgres (supabase/tests/*.sql).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase
+        run: supabase start
+      - name: Run pgTAP tests
+        run: supabase test db
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop
