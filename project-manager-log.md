@@ -296,3 +296,17 @@ Phase 6 — Slice 2 (built, **not yet applied or tested**):
 - **Still owed — the one hands-on test (not started yet):** confirm the once-a-minute background job is actually running on the live database, and that an expired match shows "This match expired." in the app.
 - Then start the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
 - Small polish, still on the list: a clearer countdown clock for users (and maybe for the matchmaker too).
+
+---
+
+## Day 10 — 2026-06-19 (back after a break)
+
+**The break.** About a week off — 7 days with no work since the last session on June 11.
+
+**Where we left off.** We'd finished building and passing the automated tests for the match-expiry feature and switched it on in the live database.
+
+**Steps for next.**
+
+- **Still owed — the one hands-on test (not started yet):** confirm the once-a-minute background job is actually running on the live database, and that an expired match shows "This match expired." in the app.
+- Then start the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
+- Small polish, still tracked: a clearer countdown clock for users (and maybe the matchmaker too).
