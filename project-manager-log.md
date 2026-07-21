@@ -339,3 +339,34 @@ Phase 6 — Slice 2 (built, **not yet applied or tested**):
 - **Then the still-owed hands-on test** (unchanged, now blocked only by the above): confirm the once-a-minute background job is really running on the live database, and that an expired match shows "This match expired." in the app. The database half of this check needs no app and could go first if we want an early signal.
 - Then the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
 - Small polish, still tracked: a clearer countdown clock for users (and maybe the matchmaker too).
+
+---
+
+## Day 12 — 2026-07-21
+
+**A false start, and why we redid it.** We handed the project to an AI agent to carry forward on its own. It ran — but not the way we'd intended: the plan was for a specific model (Fable 5) to do the building, and that instruction only ever existed in a chat conversation, which was closed before the run began. The agent that actually ran had no way of knowing. *The lesson, and the fix:* anything the build depends on has to be written into the project's own documents, not left in a conversation. The strategy is now recorded in the build brief where it survives.
+
+**What we salvaged rather than threw away.** The first run's work is parked safely on a side branch, nothing deleted. Two pieces of it were genuinely useful and were kept:
+
+- A **way for the agent to log into the matchmaker app without a human**. The app only offered "Sign in with Google" or Apple, and neither can be operated by an agent — which quietly made the entire matchmaker side untestable without someone sitting at the keyboard. A debug-only email/password shortcut fixes that. *Why keep it:* any autonomous run hits this same wall; re-discovering it would just cost time.
+- A **fix to the build instructions** that had been wrong in our own brief (it named a specific iPhone simulator model that Apple has since retired).
+
+The half-finished match-history work from that run was deliberately *not* carried over — it will be rebuilt properly as part of the planned next step.
+
+**Reassuring finding: the live database was never touched.** Before redoing anything we compared the live database against the backup taken earlier that day. They are identical, down to the character. The first run wrote a database change to a file but never applied it. So the "undo" here was purely a matter of tidying up code — nothing about the real data or its structure needed reversing.
+
+**We also answered one of the open questions for free.** While checking the database we confirmed the **once-a-minute background job is scheduled and switched on**. That was one of the two things we owed a hands-on test for. What's still unproven is the other half: that when a match does expire, the user actually sees "This match expired." in the app.
+
+**Milestone: the apps build.** The restored app projects — the ones we'd found deleted and recovered on Day 11 — were rebuilt from scratch and both apps compile cleanly, as does the shared code, with all automated tests passing. **No repairs were needed at all.** The recovery was clean.
+
+- *Why we can trust this:* the first build passed suspiciously easily, so it was thrown away and redone completely from scratch, in case leftover files from before the deletion were masking a problem. It passed again.
+- *The reason nothing broke:* the projects are set up so that any code file sitting in the app's folder is automatically included. So even though the recovered project files were a month old, they picked up everything added since without complaint.
+- **This matters beyond today:** Day 11's checkpoint was a *known* state but an unverified one. It is now a known-*working* state — a genuine safe point to fall back to.
+
+**Assumptions worth flagging.** The kept debug login assumes a seeded staff account exists in the database; if it doesn't, the setup script for it is included. And the decision to keep two pieces of the first run means this is not a perfectly clean re-run — it's a pragmatic restart, chosen deliberately because the goal is working apps, not a controlled experiment.
+
+**Steps for next.**
+
+- **The still-owed hands-on test**, now unblocked: create a match, accept on one side only, let the other side ignore it, and confirm the user sees "This match expired." and that both people return to the queue in the right order.
+- Then the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
+- Small polish, still tracked: a clearer countdown clock for users (and maybe the matchmaker too).
