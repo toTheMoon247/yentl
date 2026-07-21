@@ -68,6 +68,8 @@ private struct MatchmakerHomeView: View {
                 .tabItem { Label("Review", systemImage: "rectangle.stack.person.crop") }
             QueueTab()
                 .tabItem { Label("Queue", systemImage: "list.bullet.rectangle") }
+            RecentMatchesView()
+                .tabItem { Label("Matches", systemImage: "heart.text.square") }
         }
     }
 }

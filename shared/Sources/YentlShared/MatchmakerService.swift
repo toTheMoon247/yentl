@@ -91,6 +91,34 @@ public final class MatchmakerService {
         }
     }
 
+    /// Every match a given user was part of, newest first, from that user's
+    /// perspective (Match History screen).
+    public func matchHistory(for userID: UUID) async throws -> [MatchHistoryEntry] {
+        do {
+            return try await Backend.supabase
+                .rpc("match_history_for_user", params: TargetParam(target: userID))
+                .execute()
+                .value
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchmakerError.unexpected(error)
+        }
+    }
+
+    /// The latest matches across all users, newest first (Recent Matches
+    /// dashboard). The server clamps `limit` to 1...200.
+    public func recentMatches(limit: Int = 50) async throws -> [RecentMatchEntry] {
+        do {
+            return try await Backend.supabase
+                .rpc("recent_matches", params: LimitParams(limitCount: limit))
+                .execute()
+                .value
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchmakerError.unexpected(error)
+        }
+    }
+
     /// "Next profile" — move the pinned user to the back of the queue (revisit
     /// later) without matching.
     public func requeue(userID: UUID) async throws {
@@ -107,4 +135,13 @@ public final class MatchmakerService {
     private struct PinnedParam: Encodable { let pinned: UUID }
     private struct TargetParam: Encodable { let target: UUID }
     private struct StatsRow: Decodable { let received: Int; let given: Int }
+
+    /// Internal (not private) so the snake-case key is unit-tested — a drifted
+    /// CodingKey would silently fall back to the server-side default limit.
+    struct LimitParams: Encodable {
+        let limitCount: Int
+        enum CodingKeys: String, CodingKey {
+            case limitCount = "limit_count"
+        }
+    }
 }

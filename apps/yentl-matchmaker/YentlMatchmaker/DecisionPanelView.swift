@@ -128,7 +128,18 @@ struct DecisionPanelView: View {
                 }
             }
         }
-        if pinnedID != nil {
+        if let pinnedID {
+            // The pinned user's match history (Slice 3) — pushed onto whichever
+            // NavigationStack this panel lives in (own for the root tab, the
+            // Queue tab's when opened jump-to-pin).
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    MatchHistoryView(userID: pinnedID, displayName: pinned?.displayName)
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .accessibilityLabel("Match history")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Next profile") { Task { await advance() } }
                     .disabled(isAdvancing)
