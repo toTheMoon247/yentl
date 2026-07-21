@@ -54,3 +54,6 @@ fastlane/test_output
 # Supabase CLI local state
 supabase/.branches
 supabase/.temp
+
+# Local Claude Code settings (personal permission allowlist)
+.claude/settings.local.json
