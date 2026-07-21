@@ -215,7 +215,26 @@ Goal: confirmed matches get a private chat channel.
 - [ ] Chat list / inbox screen
 - [ ] Read receipts and typing indicators (Stream native)
 - [ ] Block / report in chat
-- [ ] Chat lifecycle: archive rules (OPEN: define)
+- [ ] Chat lifecycle — **decided 2026-07-22**, closing the last open question
+      in this phase:
+  - A chat **stays open after a date happens**. A confirmed date does not close
+    the conversation; the product does not assume one date is the end.
+  - A chat **archives after 48 hours of inactivity** — no message from either
+    participant.
+  - **Archived means hidden, not closed.** The chat moves out of the main inbox
+    into an Archived section; either person can still open it, read the full
+    history, and send a message, which returns it to the active inbox.
+    Archiving is an inbox filter, not a state change on the relationship —
+    chosen so a slow replier is not punished permanently, and so nothing is
+    ever lost.
+  - **The 48h clock starts at channel creation**, so a confirmed match neither
+    person ever writes in archives on the same rule. One timer, one definition:
+    *48h since the last activity, where channel creation counts as activity.*
+  - Implementation note: because archived is a view state rather than a
+    permission change, this needs no Stream-side channel freezing — it can be
+    derived from `last_message_at` (falling back to channel creation) rather
+    than stored, which avoids a scheduled job that could drift out of sync.
+    Block/report remains a separate, harder boundary.
 
 Exit: two test users who both confirm a match can chat in real time.
 
