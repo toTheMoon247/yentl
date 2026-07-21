@@ -3,6 +3,26 @@
 Single hand-off brief for an autonomous agent continuing Yentl. Written
 2026-07-21, immediately after the `baseline-pre-autonomous-2026-07-21` tag.
 
+## How this build is run
+
+**Implementation work is carried out by Fable 5 subagents** (`model: fable` on
+the Agent tool), orchestrated by the main agent. This is deliberate and is part
+of the brief — it is recorded here because it is the one instruction that cannot
+survive a session restart any other way.
+
+*Why it is written down:* the first attempt at this build (2026-07-21, preserved
+on branch `autonomous-run-1-mainagent`) ran entirely on the main agent, because
+the intent lived only in a chat session that was then discarded. Anything the run
+depends on belongs in this file, not in conversation.
+
+Orchestration shape — **staged, not one shot**:
+
+- The main agent runs one stage at a time, spawning a Fable 5 subagent per stage.
+- Between stages the main agent verifies the result and writes the journal entry.
+- Rationale: a single subagent carrying the whole build exhausts its context, and
+  long-horizon instructions get dropped. Run 1 dropped the journal requirement
+  entirely despite it being stated below.
+
 ## Read first
 
 1. `CLAUDE.md` — especially **Live environment and safety rails**. Non-negotiable.
@@ -28,11 +48,16 @@ Day 11. They have not been opened or built since. The baseline is therefore a
 ```bash
 cd shared && swift build && swift test
 xcodebuild build -scheme Yentl -project apps/yentl/Yentl.xcodeproj \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'generic/platform=iOS Simulator'
 xcodebuild build -scheme YentlMatchmaker \
   -project apps/yentl-matchmaker/YentlMatchmaker.xcodeproj \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'generic/platform=iOS Simulator'
 ```
+
+Use `generic/platform=iOS Simulator` for build checks — a named device breaks
+when Xcode retires a simulator (this brief originally said `name=iPhone 16`,
+which no longer exists on the current runtime). To *run* the app, pick a
+concrete device from `xcrun simctl list devices available`.
 
 The restored project files are a month old. Two likely failures: source files
 added since June are on disk but not in the target's build phase, and SPM
@@ -49,10 +74,15 @@ the **pg_cron job actually fires**.
 1. Verify the job exists and is active:
    `select jobname, schedule, active from cron.job where jobname='expire-stale-matches';`
    If it is missing, pg_cron likely is not enabled — that is a dashboard-only
-   action, so **stop and ask**.
+   action, so **stop and ask**. (Checked 2026-07-21: the job exists and reports
+   `[* * * * *] active=true`. Re-confirm rather than assume, but this is expected
+   to pass — the unproven half is whether an expiry reaches the app UI.)
 2. Clean slate: run `reset_matches.sql` then `reset_queue.sql` (in `supabase/dev/`).
 3. Create a match: Debug matchmaker build → Review tab → pinned user has a
    candidate → **Match**. Note both names (A = pinned, B = candidate).
+   The matchmaker app's OAuth-only sign-in is bypassed in DEBUG by
+   `AuthFlowConfig.debugSignInEmail` (`seed-staff-01@yentl.test`); run
+   `supabase/dev/seed_staff_account.sql` first if that account does not exist.
 4. Accept on **one side only**: consumer app, 🐞 → switch to A → Matches →
    **Accept**. Leave B alone, so B "ignores".
 5. Force expiry rather than waiting out the 5-minute DEBUG window:
