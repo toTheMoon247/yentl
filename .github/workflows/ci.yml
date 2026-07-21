@@ -76,12 +76,22 @@ jobs:
     # runners don't provide. Exercises the migrations + RPCs against a real
     # Postgres (supabase/tests/*.sql).
     runs-on: ubuntu-latest
+    env:
+      # The CLI's telemetry client can hang on shutdown ("Timeout while
+      # shutting down PostHog") and exit non-zero *after* the tests have
+      # already passed, failing the job on a green run. Opt out.
+      DO_NOT_TRACK: "1"
     steps:
       - uses: actions/checkout@v4
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned deliberately. This was `latest`, which meant a CLI release
+          # could break CI with no change to this repo — and did: a release
+          # between 2026-06-11 and 2026-06-18 stopped the local stack granting
+          # table privileges, turning CI red on a docs-only commit for five
+          # weeks. Bump this on purpose, not by surprise.
+          version: 2.109.0
       - name: Start local Supabase
         run: supabase start
       - name: Run pgTAP tests
