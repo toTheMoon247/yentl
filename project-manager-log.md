@@ -415,9 +415,13 @@ The rejection case is the one that had never been tested. It behaves correctly, 
 - *Why this way:* the safety rules we wrote down are meaningless if an unattended run can sail past them. The rule of thumb: if a mistake can be undone, don't interrupt; if it can't, always ask.
 - *Scoped to Yentl only*, so nothing here affects other projects on the machine. Written down in the project's own documentation so a future session inherits the reasoning, not just the settings.
 
-**Steps for next.**
+**Milestone reached: `v0.6.0` — Phase 6 is done.** All automated checks green, every requirement exercised in the real app, and a permanent marker cut so we can always return to this exact working state.
 
-- Tag the `v0.6.0` milestone once the automated checks are green — Phase 6's requirements are now met.
+Before tagging, the last loose end was closed: the new "not accepted by both" wording was confirmed on screen rather than assumed. That check paid for itself — it found that two of our own automated tests still expected the old "respond within 24h" text and would have failed from now on. Fixed.
+
+*What the milestone deliberately does not claim, so the record is honest:* users still have no way to see their own past matches (the plan never asked for one — worth deciding whether that's intended), and match creation is built slightly differently from how the plan describes it, though it behaves the same.
+
+**Steps for next.**
 - **Then Phase 7 (chat), which needs credentials that only you can create** — a Stream Chat account. Worth knowing this is the point where the build stops being able to run unattended.
 - **Enrol in the Apple Developer Program now if you haven't.** Phase 8 (notifications) cannot start without it and approval takes real-world days. It is the longest lead time on the project and nothing technical can shorten it.
 - Still tracked: the clearer countdown clock on the *consumer* side.
