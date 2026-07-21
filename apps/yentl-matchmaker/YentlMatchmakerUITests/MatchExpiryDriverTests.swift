@@ -80,8 +80,13 @@ final class MatchExpiryDriverTests: XCTestCase {
                       "Tab bar never appeared after switching to \(aName)")
         matchesTab.tap()
 
-        // The pending, unanswered match row.
-        let newRow = app.staticTexts["New match — respond within 24h"]
+        // The pending, unanswered match row. Matched on the stable prefix: the
+        // window is derived from AppConfig, so it reads "5m" in DEBUG and "24h"
+        // in Release. Asserting the whole literal broke when it stopped being
+        // hardcoded.
+        let newRow = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "New match — respond within")
+        ).firstMatch
         XCTAssertTrue(newRow.waitForExistence(timeout: 20),
                       "No pending match row for \(aName)")
         shoot("step2-matches-list")

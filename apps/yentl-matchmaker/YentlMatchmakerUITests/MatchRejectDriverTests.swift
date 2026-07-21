@@ -230,7 +230,11 @@ final class MatchRejectDriverTests: XCTestCase {
                       "Tab bar never appeared (\(tag))")
         matchesTab.tap()
 
-        let newRow = app.staticTexts["New match — respond within 24h"]
+        // Prefix match: the window comes from AppConfig ("5m" DEBUG, "24h"
+        // Release), so the full literal is not stable.
+        let newRow = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "New match — respond within")
+        ).firstMatch
         XCTAssertTrue(newRow.waitForExistence(timeout: 20),
                       "No pending match row (\(tag))")
         shoot("\(tag)-matches-list")
