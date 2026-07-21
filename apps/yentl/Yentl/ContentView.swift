@@ -30,6 +30,9 @@ struct ContentView: View {
         case .signedOut:
             YentlAuthFlow(config: .yentl)
                 .onAppear { stage = nil; statusError = nil }
+                #if DEBUG
+                .modifier(SignedOutTestLoginButton())
+                #endif
         case .signedIn:
             signedInContent
                 .task(id: signedInUserID) { await loadStage() }
@@ -149,6 +152,7 @@ private struct ProfileTab: View {
                 #if DEBUG
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showingTestLogin = true } label: { Image(systemName: "ladybug") }
+                        .accessibilityIdentifier("debug-test-login")
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {
@@ -169,6 +173,37 @@ private struct ProfileTab: View {
         #endif
     }
 }
+
+#if DEBUG
+/// DEBUG-only: exposes the test-login picker from the *signed-out* screen.
+///
+/// TestLoginPicker normally lives behind the Profile tab, which is only
+/// reachable once signed in — so on a fresh install (new simulator, no
+/// session) there was no way to sign in as a seed at all: the signed-out
+/// screen offers only Google/Apple OAuth. This ladybug overlay closes that
+/// gap so the app can be driven unattended, mirroring the matchmaker app's
+/// `debugSignInEmail` escape hatch. Never compiled into release builds.
+private struct SignedOutTestLoginButton: ViewModifier {
+    @State private var showingPicker = false
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    showingPicker = true
+                } label: {
+                    Image(systemName: "ladybug")
+                        .font(.title3)
+                        .padding(DesignTokens.Spacing.lg)
+                }
+                .accessibilityIdentifier("debug-test-login")
+            }
+            .sheet(isPresented: $showingPicker) {
+                TestLoginPicker(onSwitched: { showingPicker = false })
+            }
+    }
+}
+#endif
 
 #Preview {
     ContentView()
