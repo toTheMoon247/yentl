@@ -310,3 +310,32 @@ Phase 6 — Slice 2 (built, **not yet applied or tested**):
 - **Still owed — the one hands-on test (not started yet):** confirm the once-a-minute background job is actually running on the live database, and that an expired match shows "This match expired." in the app.
 - Then start the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
 - Small polish, still tracked: a clearer countdown clock for users (and maybe the matchmaker too).
+
+---
+
+## Day 11 — 2026-07-21 (back after a longer break)
+
+**The break.** About a month off — roughly 32 days with no work since the last session on June 19.
+
+**What we did today.**
+
+- **Found both app projects missing.** Picking the work back up, the two Xcode project files — the files that tell Xcode how to assemble each app — were gone from the working folder. Both had been deleted at some point around July 11. The actual app source code was untouched; only the project wrappers were missing. Without them neither app can be opened or run, which blocked the hands-on test we still owe.
+- **Restored them from version control.** Because the projects were safely committed, restoring was a one-step recovery back to the last saved state. Both are back with all their files, and the working folder is otherwise clean. *Why this way:* version control already held a known-good copy, so restoring beats rebuilding the projects by hand — no risk of a subtly different setup.
+
+- **Prepared the project for an autonomous build.** The plan from here is to let an AI agent carry the remaining work forward with as little hand-holding as possible. To make that realistic we gave it the tools a developer would need: a connection to the live database (so it can apply and check database changes itself), and control of the iPhone simulator (so it can build, run, and actually look at the app instead of only writing code). *Why:* most of the hard days on this project were integration problems, not typing-code problems — an agent that can't reach the database or see the app running would just produce plausible-looking code nobody verified.
+- **Took a full backup of the live database** — both the structure and the data — stored outside the project folder at `~/Projects/yentl-backups/`. *Why:* the agent now has permission to change the live database, and the last saved checkpoint was a month old. This is the undo button. It is kept outside the project on purpose: it contains real user data and shouldn't be published to GitHub.
+- **Marked a baseline checkpoint** (tag `baseline-pre-autonomous-2026-07-21`) recording the exact state of the project before any autonomous work begins. *Why:* a clear, permanent "this is where we stood before" point to return to and to compare against. It is deliberately *not* a version number like `v0.5.2` — our rule is that version tags mean "verified working," and the hands-on expiry test is still owed, so calling it a release would overstate it.
+
+**Current status.**
+
+- Both app projects are restored **but not yet opened or built**, so the restore is not proven sound yet. Two things to watch on first build: the restored copies are a month old, so any file added to an app since then may need re-adding in Xcode; and the pinned versions of our outside code libraries are from June, so Xcode may want to re-fetch them.
+- Otherwise unchanged from Day 10: the match-expiry feature is live in the database and its automated tests pass. `v0.5.1` remains the last verified rollback point.
+
+- One useful thing the backup already told us: the match-expiry logic really is present in the live database, confirming Day 9's note. What's still unconfirmed is whether the *once-a-minute scheduler* that drives it is actually running — which is exactly the hands-on test below.
+
+**Steps for next.**
+
+- **First: prove the restore.** Open and build both apps. Anything the restore lost shows up here, and everything below depends on being able to run the apps.
+- **Then the still-owed hands-on test** (unchanged, now blocked only by the above): confirm the once-a-minute background job is really running on the live database, and that an expired match shows "This match expired." in the app. The database half of this check needs no app and could go first if we want an early signal.
+- Then the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
+- Small polish, still tracked: a clearer countdown clock for users (and maybe the matchmaker too).
