@@ -33,15 +33,31 @@ docs/                     Product and implementation documentation
 
 ## Build and test
 
-The shared Swift package is the only buildable artifact today (the two Xcode projects have not been created yet — see per-app READMEs for the Xcode wizard walkthrough).
+All three targets build: the shared Swift package and both Xcode apps.
 
 ```bash
-cd shared
-swift build
-swift test
+cd shared && swift build && swift test
+
+xcodebuild build -scheme Yentl -project apps/yentl/Yentl.xcodeproj \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild build -scheme YentlMatchmaker \
+  -project apps/yentl-matchmaker/YentlMatchmaker.xcodeproj \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-`.github/workflows/ci.yml` runs the same on a `macos-14` runner on every PR and push to `main`.
+`.github/workflows/ci.yml` runs these on `macos-15` runners on every PR and push to `main`.
+
+## Live environment and safety rails
+
+⚠️ **The Supabase MCP server has write access to the live project** (`--project-ref=kegkaerpusgwgfjjrxha` — the same ref hardcoded in `shared/Sources/YentlShared/Environment.swift`). There is no separate staging database. Anything applied through it — migrations, `execute_sql`, function changes — hits the real schema, the real seed users, and real match rows.
+
+- **Before schema changes, take a snapshot.** Backups live outside the repo in `~/Projects/yentl-backups/` (they contain user data and must never be committed). Take one with `supabase db dump --linked -f <path>` plus `--data-only` for rows. Requires Docker Desktop running — `supabase db dump` shells out to `pg_dump` in a container.
+- **Never `drop` a table, type, or function on the live project** without explicit confirmation from the user first.
+- **`baseline-pre-autonomous-2026-07-21`** is the tagged pre-autonomous-build state, with a matching DB snapshot from the same day. It is a rollback point, not a release — see `RELEASES.md` for why the `v0.x` line was deliberately not advanced.
+
+Other MCP servers configured: `xcodebuild` (build/simulator/UI automation/screenshots) and `context7` (current library docs). MCP servers added mid-session are only picked up on session start.
+
+Some setup steps are dashboard-only and cannot be done through any API — enabling **pg_cron** (Database → Extensions) and allowlisting the **redirect URLs** `yentl://auth-callback` and `yentl-matchmaker://auth-callback` (Authentication → URL Configuration). Stop and ask the user rather than trying to automate these.
 
 ## Tech stack (summary)
 
