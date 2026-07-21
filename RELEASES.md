@@ -37,6 +37,54 @@ commit it points at.
 
 ---
 
+## v0.6.0 — Phase 6: Match Creation & Confirmation (2026-07-22)
+
+Phase 6 complete. The plan's exit criteria — the "ignored = rejected" rule
+holding in three scenarios — is met, each one exercised in-app against the live
+database rather than only in tests. CI green; 45 pgTAP + 8 shared unit tests.
+
+- **Expiry proven end-to-end, logic and scheduler separately.** A match left
+  unanswered flips to `expired` and both users return to the queue by their own
+  response. Verified twice: once by invoking `expire_stale_matches()` by hand
+  (the *logic*), and once by creating a match, accepting on one side, and then
+  writing nothing at all — the pg_cron sweep expired it unaided (the
+  *scheduler*), reaching both the database and the app UI.
+- **Explicit rejection** (never previously tested) in both orderings: accept →
+  reject, and reject-first with the other side silent. Both resolved in 26–42s,
+  well inside the window, confirming a rejection ends a match immediately rather
+  than waiting out the timer.
+- **Match history:** `matches.resolved_at` (when a match left `pending` — the
+  schema previously recorded creation and expiry but never the actual outcome
+  time), plus staff-only `match_history_for_user` / `recent_matches` RPCs. New
+  matchmaker **Matches** tab (recent-matches dashboard) and per-user history,
+  reachable from a dashboard row or the Decision Panel. Pending rows show a live
+  countdown.
+- **Outcome wording:** a match that fails now reads *"This match wasn't accepted
+  by both people"* — identical whether the user declined, was declined, or
+  nobody replied. Deliberate: clear about the outcome without telling someone
+  they were personally turned down.
+- **CI repaired after five weeks red.** No migration granted table privileges;
+  the live project worked only because Supabase's hosted platform adds them at
+  table creation. A CLI release between 2026-06-11 and 2026-06-18 stopped the
+  local stack doing so, turning CI red on a docs-only commit. Grants are now
+  explicit — meaning the migrations can rebuild a working database from scratch,
+  which they previously could not. CLI pinned so a release cannot break CI
+  again, and telemetry disabled (its shutdown hang was failing green runs).
+- **Dev/test tooling:** DEBUG email/password sign-in for the OAuth-only
+  matchmaker app and a signed-out test-login shortcut for the consumer app —
+  between them, the whole match lifecycle is now drivable unattended. Reusable
+  `MatchExpiry` / `MatchReject` / `MatchHistory` UI drivers.
+
+Migrations: `20260721160000_match_history`,
+`20260721170000_explicit_table_grants`.
+
+**Not included:** the consumer app has no match-history screen — the
+implementation plan defines none, so users cannot see their own past matches.
+Match creation is a Postgres RPC, not the edge function the plan's backend
+checklist names; behaviour is equivalent.
+
+---
+
 ## v0.5.1 — Phase 6 Slice 1: Match Creation & Confirmation (interim) (2026-06-08)
 
 Interim checkpoint: the first slice of Phase 6 plus a round of real fixes shaken
