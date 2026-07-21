@@ -9,11 +9,26 @@ public struct AuthFlowConfig: Sendable {
     public let appTitle: String
     public let appTagline: String
     public let redirectURL: URL
+    /// DEBUG only: a seeded email/password account this app can sign in as with
+    /// one tap, bypassing OAuth. `nil` hides the shortcut.
+    ///
+    /// Exists because the matchmaker app otherwise offers only Google / Apple,
+    /// which cannot be driven unattended — so the Decision Panel, and with it
+    /// the whole match lifecycle, was untestable without a human at the
+    /// keyboard. The consumer app has its own richer picker (TestLoginPicker)
+    /// and leaves this `nil`. Set up by supabase/dev/seed_staff_account.sql.
+    public let debugSignInEmail: String?
 
-    public init(appTitle: String, appTagline: String, redirectURL: URL) {
+    public init(
+        appTitle: String,
+        appTagline: String,
+        redirectURL: URL,
+        debugSignInEmail: String? = nil
+    ) {
         self.appTitle = appTitle
         self.appTagline = appTagline
         self.redirectURL = redirectURL
+        self.debugSignInEmail = debugSignInEmail
     }
 }
 
@@ -29,7 +44,8 @@ public extension AuthFlowConfig {
     static let matchmaker = AuthFlowConfig(
         appTitle: "Yentl Matchmaker",
         appTagline: "Internal matchmaking tool.",
-        redirectURL: URL(string: "yentl-matchmaker://auth-callback")!
+        redirectURL: URL(string: "yentl-matchmaker://auth-callback")!,
+        debugSignInEmail: "seed-staff-01@yentl.test"
     )
 }
 
@@ -81,6 +97,21 @@ public struct YentlAuthFlow: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(isWorking)
+
+                #if DEBUG
+                if let debugEmail = config.debugSignInEmail {
+                    Button {
+                        Task { await signInAsDebugAccount(debugEmail) }
+                    } label: {
+                        Label("Sign in as test staff (DEBUG)", systemImage: "ladybug")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DesignTokens.Spacing.sm)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .disabled(isWorking)
+                }
+                #endif
             }
 
             if let errorMessage {
@@ -97,6 +128,22 @@ public struct YentlAuthFlow: View {
     private enum Provider {
         case apple, google
     }
+
+    #if DEBUG
+    /// Shared password for every seeded account (supabase/dev/set_seed_passwords.sql).
+    private static let debugPassword = "yentltest"
+
+    private func signInAsDebugAccount(_ email: String) async {
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+        do {
+            try await auth.signInWithEmail(email, password: Self.debugPassword)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    #endif
 
     private func handle(_ provider: Provider) async {
         isWorking = true
