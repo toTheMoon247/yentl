@@ -223,8 +223,11 @@ Exit: two test users who both confirm a match can chat in real time.
 
 ## Phase 8 — Notifications
 
-> ⚠️ **Blocker before this phase: enroll in the Apple Developer Program ($99/yr) at developer.apple.com/programs.**
-> Phases 1–7 are buildable without it. Phase 8 needs an APNs key from Apple Developer Portal (paid program only), and enrolling here also unlocks (a) replacing the Apple Sign-In stub from Phase 1 with the real flow, and (b) StoreKit / App Store Connect work for Phase 9. Enrollment usually takes <24h.
+> ✅ **Resolved 2026-07-22: the Apple Developer Program membership is active.**
+> This was the long-lead blocker on Phases 8–9. It unlocks the APNs key needed
+> here, plus (a) replacing the Apple Sign-In stub from Phase 1 with the real
+> flow, and (b) StoreKit / App Store Connect work for Phase 9. The remaining
+> external dependency for Phase 7 is Stream Chat credentials.
 
 Goal: users and matchmakers get the right pushes at the right times.
 
