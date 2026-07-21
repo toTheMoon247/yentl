@@ -39,11 +39,20 @@ All three targets build: the shared Swift package and both Xcode apps.
 cd shared && swift build && swift test
 
 xcodebuild build -scheme Yentl -project apps/yentl/Yentl.xcodeproj \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'generic/platform=iOS Simulator'
 xcodebuild build -scheme YentlMatchmaker \
   -project apps/yentl-matchmaker/YentlMatchmaker.xcodeproj \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+  -destination 'generic/platform=iOS Simulator'
 ```
+
+Use `generic/platform=iOS Simulator` for build checks — it matches CI and, unlike a
+named device, does not break when Xcode updates retire a simulator. (A `name=iPhone 16`
+destination was documented here until 2026-07-21 and failed once Xcode shipped the
+iOS 26.5 runtime with only iPhone 17-family devices.) When you need to *run* the app,
+pick a concrete device from `xcrun simctl list devices available`.
+
+Both `.xcodeproj`s use Xcode **file-system-synchronized groups** — a `.swift` file
+dropped in the app folder is compiled automatically, with no project-file edit.
 
 `.github/workflows/ci.yml` runs these on `macos-15` runners on every PR and push to `main`.
 
