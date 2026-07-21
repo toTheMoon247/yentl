@@ -154,7 +154,10 @@ private struct MatchDetailView: View {
         case .confirmed:
             label("It's a match! 🎉", "checkmark.seal.fill", .green)
         case .rejected:
-            label("Not a match.", "xmark.circle", .secondary)
+            // Deliberately does not say who declined: the user learns the
+            // match is over without being told they were the one rejected.
+            label("This match wasn't accepted by both people.",
+                  "xmark.circle", .secondary)
         case .expired:
             label("This match expired.", "clock.badge.xmark", .secondary)
         }
@@ -221,11 +224,21 @@ private enum MatchStatus {
     static func line(for match: MatchSummary) -> String {
         switch match.state {
         case .pending where match.hasResponded: return "Waiting for them"
-        case .pending: return "New match — respond within 24h"
+        // Derived from AppConfig rather than hardcoded "24h", which was wrong
+        // in DEBUG builds (5-minute window) and would be wrong again if the
+        // release window ever changed.
+        case .pending: return "New match — respond within \(responseWindow)"
         case .confirmed: return "It's a match!"
-        case .rejected: return "Not a match"
+        case .rejected: return "Not accepted by both"
         case .expired: return "Expired"
         }
+    }
+
+    /// The configured response window, as a short human phrase ("24h", "5m").
+    static var responseWindow: String {
+        let seconds = AppConfig.matchExpirySeconds
+        let hours = seconds / 3600
+        return hours >= 1 ? "\(hours)h" : "\(max(1, seconds / 60))m"
     }
 
     static func countdown(to expiry: Date, now: Date) -> String {

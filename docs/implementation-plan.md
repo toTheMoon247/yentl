@@ -190,7 +190,11 @@ Goal: a matchmaker creates a match, both users see it, the 24-hour clock starts,
 - [ ] Incoming match notification UI
 - [ ] Match detail screen (other user's full profile + accept / reject buttons + countdown)
 - [ ] Accept / reject actions
-- [ ] Outcome screens (confirmed, expired, rejected by the other side)
+- [ ] Outcome screens (confirmed, expired, not accepted by both). Decided
+      2026-07-21: the rejected state deliberately does **not** reveal who
+      declined — it reads "This match wasn't accepted by both people",
+      identically whether the user rejected, was rejected, or nobody replied.
+      Clear about the outcome without telling someone they were turned down.
 
 ### Yentl Matchmaker
 - [ ] Match creation confirm-step from Decision Panel

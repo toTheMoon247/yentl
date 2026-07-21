@@ -64,7 +64,29 @@ dropped in the app folder is compiled automatically, with no project-file edit.
 - **Never `drop` a table, type, or function on the live project** without explicit confirmation from the user first.
 - **`baseline-pre-autonomous-2026-07-21`** is the tagged pre-autonomous-build state, with a matching DB snapshot from the same day. It is a rollback point, not a release — see `RELEASES.md` for why the `v0.x` line was deliberately not advanced.
 
-Other MCP servers configured: `xcodebuild` (build/simulator/UI automation/screenshots) and `context7` (current library docs). MCP servers added mid-session are only picked up on session start.
+Other MCP servers configured: `xcodebuild` (build/simulator/UI automation/screenshots) and `context7` (current library docs). MCP servers added mid-session are only picked up on session start. All three are registered at **user scope** (`~/.claude.json`), so they load in every project on this machine — the Supabase one stays pinned to Yentl's `--project-ref` regardless.
+
+### Permissions (workspace-scoped)
+
+Permissions live in two **project** files and deliberately never in `~/.claude/settings.json` — they are Yentl's rules, not machine-wide ones, so other projects are unaffected:
+
+| File | Committed? | Holds |
+|---|---|---|
+| `.claude/settings.json` | yes | the generic allow / ask / deny rules |
+| `.claude/settings.local.json` | no (gitignored) | machine-specific paths only |
+
+The split exists because this repo is **public**: absolute paths containing a home directory stay in the gitignored file.
+
+Shape of the rules, and the reasoning that matters:
+
+- **Allowed without prompting:** `xcodebuild`, `xcrun`, `swift build/test/package`, everyday `git`, *local* Supabase (`start`, `stop`, `test`, `db reset`, `db dump`, `migration list/new`), read-only `gh`, read-only shell utilities, the `xcodebuild`/`context7` MCP tools, and the read-only Supabase MCP tools.
+- **Always prompts (`ask`):** `supabase db push`, `mcp__supabase__apply_migration`, `deploy_edge_function`, force-push, `git reset --hard`, `git rebase`. These are the operations that change the live database or rewrite history — the safety rails above are worthless if an autonomous run can sail through them unprompted.
+- **Denied outright:** `sudo`, `rm -rf` of `/`, `~` or dotfiles, `curl | sh`, macOS system administration (`diskutil`, `launchctl`, `defaults write`), and reads of `~/.ssh` / `~/.aws`.
+- **Deliberately excluded from the allowlist:** `python3`, `osascript`, `npx`, and `gh api` — each is "run anything" or "write to GitHub" wearing a narrow disguise. They still work; they just ask first.
+
+One residual risk worth knowing: `mcp__supabase__execute_sql` **is** allowed, because dev helpers and queries use it constantly — but it can technically run `DROP`. The "never drop without confirmation" rule above is therefore a convention, not something the permission layer enforces.
+
+Rules are read at session start; edits to them need a restart to take effect.
 
 Some setup steps are dashboard-only and cannot be done through any API — enabling **pg_cron** (Database → Extensions) and allowlisting the **redirect URLs** `yentl://auth-callback` and `yentl-matchmaker://auth-callback` (Authentication → URL Configuration). Stop and ask the user rather than trying to automate these.
 

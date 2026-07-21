@@ -391,9 +391,33 @@ We also confirmed by eye that the user genuinely sees "This match expired." in t
 
 **Assumptions worth flagging.** The plan lists match history under the *matchmaker* app only, with no equivalent screen for ordinary users — so nothing was built for them. If users are meant to see their own history, that's an unbuilt gap, not an oversight. Also, for matches that ended *before* today, the "resolved" time is estimated from when they were due to expire; it's exact for the single real match in the database, approximate in principle.
 
+**Milestone: the matchmaker can now see match history.** Two new screens: a feed of recent matches across everyone, and a per-user history reachable from that feed or straight from the Decision Panel. Pending matches show a live countdown, which covers part of the "clearer countdown" wish for the matchmaker side. Consumer app untouched, per the plan.
+
+- Verified by actually looking at the screens with real data, sparse data, and an empty list — not just by the code compiling.
+- *Honest gap:* the "Unknown user" fallback (for a match whose participant has no profile) is covered by automated tests but was never seen on screen, because every real user has a profile and faking one would have meant damaging live data. A reasonable trade.
+- **The automatic timer proved itself again, unprompted.** While setting up a screenshot, a match was created and then expired entirely on its own — a second independent confirmation, from work that wasn't trying to test it.
+
+**Milestone: Phase 6 is functionally complete.** The plan required the "no answer means no" rule to hold in three situations. All three now do:
+
+| Situation | When proven |
+|---|---|
+| Both people say yes | Day 8 |
+| One person ignores it | today, twice |
+| One person says no outright | today, both orderings |
+
+The rejection case is the one that had never been tested. It behaves correctly, and one detail is worth recording: a rejection ends the match **immediately** — in 26 and 42 seconds — rather than waiting for the timer, while the ignored matches took the full five minutes. So a "no" is genuinely a decision, not a disguised timeout.
+
+**A product decision, and a small bug.** When a match doesn't work out, the app now says **"This match wasn't accepted by both people."** — the same wording whether you declined, they declined, or nobody replied. Chosen deliberately: clear about the outcome without telling someone they were personally turned down. The plan previously implied saying "rejected by the other side"; the plan was updated to match the decision rather than the other way round. Separately, pending matches always claimed "respond within 24h" even in test builds where the real window is five minutes — now derived from the actual setting.
+
+**Housekeeping: tightened up how much the AI can do without asking.** Long autonomous runs were being interrupted constantly by permission prompts, and the ad-hoc approvals had quietly piled up into a messy list that permitted more than intended — including pushing database changes to the *live* system with no confirmation.
+
+- *What changed:* a deliberate, project-only permission list. Ordinary development — building, testing, running the simulator, everyday version control, local database work — now runs uninterrupted. Anything that touches the **live database** or **rewrites project history** still stops and asks. Genuinely dangerous system commands are blocked outright.
+- *Why this way:* the safety rules we wrote down are meaningless if an unattended run can sail past them. The rule of thumb: if a mistake can be undone, don't interrupt; if it can't, always ask.
+- *Scoped to Yentl only*, so nothing here affects other projects on the machine. Written down in the project's own documentation so a future session inherits the reasoning, not just the settings.
+
 **Steps for next.**
 
-- Build the matchmaker screens for the new history data: a per-user history view and a recent-matches dashboard (in progress).
-- Then verify the remaining Phase 6 scenario. The plan requires three: both people accept, one rejects outright, one ignores. The first two are covered; **an outright rejection has never been tested**, and Phase 6 can't honestly be called finished until it is.
-- Then the `v0.6.0` milestone marker, once all of the above is verified.
-- Still tracked: a clearer countdown clock for users.
+- Tag the `v0.6.0` milestone once the automated checks are green — Phase 6's requirements are now met.
+- **Then Phase 7 (chat), which needs credentials that only you can create** — a Stream Chat account. Worth knowing this is the point where the build stops being able to run unattended.
+- **Enrol in the Apple Developer Program now if you haven't.** Phase 8 (notifications) cannot start without it and approval takes real-world days. It is the longest lead time on the project and nothing technical can shorten it.
+- Still tracked: the clearer countdown clock on the *consumer* side.
