@@ -365,8 +365,35 @@ The half-finished match-history work from that run was deliberately *not* carrie
 
 **Assumptions worth flagging.** The kept debug login assumes a seeded staff account exists in the database; if it doesn't, the setup script for it is included. And the decision to keep two pieces of the first run means this is not a perfectly clean re-run — it's a pragmatic restart, chosen deliberately because the goal is working apps, not a controlled experiment.
 
+**Milestone: the match-expiry feature is fully proven.** The test we'd owed since Day 9 is done, and it went further than required. Two separate things were confirmed, which matters because they're easy to confuse:
+
+- The **rule itself** works: when a match is left unanswered, it's treated as a "no", the person who said yes goes to the front of the line, and the person who ignored it goes to the back.
+- The **automatic timer** works: a second match was created, answered by one side, and then deliberately left completely alone. It expired by itself, with no nudging. The background job has been running once a minute, on schedule, all day.
+
+We also confirmed by eye that the user genuinely sees "This match expired." in the app — not just that the database says so.
+
+**Two hidden obstacles to unattended testing, now fixed.** Neither is visible to a user, but both blocked the app from being tested without a person clicking through it: the consumer app's test-account switcher was only reachable *after* signing in, on a screen you could only reach *by* signing in; and the matchmaker app's test suite had never actually been wired up to run. Both fixed.
+
+**A five-week-old breakage nobody had noticed.** Our automatic checks — the ones that run on every change and are supposed to be the safety net — have been failing since **18 June**. They broke on a day when the only change was an edit to this very journal, which is why it went unspotted: nothing about the project had changed.
+
+- *The cause:* our database instructions never explicitly said "let the app read these tables." The live database worked anyway, because the hosting provider adds that permission automatically behind the scenes. When the provider's tooling changed in mid-June, the test environment stopped doing that — and everything failed.
+- *Why it matters far beyond a red light:* it meant **our own setup instructions could not rebuild a working database from scratch.** Anyone starting a fresh copy of Yentl — a new environment, a disaster recovery, a second developer — would have gotten a database where nothing works, with a baffling error. That was a genuine latent risk to the project, not a cosmetic problem.
+- *The fix:* the permissions are now written down explicitly, exactly matching what the live database already has, so applying it changed nothing in production. Checks are green again for the first time since 11 June — 45 automated database tests passing.
+- *Honest note:* this had been broken for five weeks and I pushed six changes today without checking those results. I should have looked before the first one.
+
+**Milestone: match history added to the database.** Matchmakers can now pull up any user's full match history and a feed of recent matches across everyone. Decisions worth recording:
+
+- **No new data was created** — every match was already kept forever, so this was a matter of *reading* existing information, not storing more. The smallest change that does the job.
+- **One genuinely new piece of information was added:** the moment a match was resolved. We recorded when a match was created and when it *would* expire, but never when it actually ended — so we could say a match expired, but never *when*. Without it, history can't be sorted or filtered by outcome date.
+- **Strictly staff-only.** Both new lookups refuse anyone who isn't a matchmaker — including a user asking about their own history through that route. Ordinary users' access is unchanged.
+- **Two independent designs were compared.** The earlier abandoned run had solved this too, so we deliberately designed it fresh and then compared. They agreed on the core approach, which is reassuring on a change that's hard to undo. The old attempt contributed three test cases we'd missed; ours contributed the resolution timestamp it lacked.
+- **A review catch before it went live:** as written, the history would have *silently omitted* any match where a participant was missing a profile — quietly showing an incomplete history, the worst kind of wrong for a record. Changed so such a match still appears, just without a name.
+
+**Assumptions worth flagging.** The plan lists match history under the *matchmaker* app only, with no equivalent screen for ordinary users — so nothing was built for them. If users are meant to see their own history, that's an unbuilt gap, not an oversight. Also, for matches that ended *before* today, the "resolved" time is estimated from when they were due to expire; it's exact for the single real match in the database, approximate in principle.
+
 **Steps for next.**
 
-- **The still-owed hands-on test**, now unblocked: create a match, accept on one side only, let the other side ignore it, and confirm the user sees "This match expired." and that both people return to the queue in the right order.
-- Then the next piece of Phase 6: a match history for each user and a recent-matches view for the matchmaker.
-- Small polish, still tracked: a clearer countdown clock for users (and maybe the matchmaker too).
+- Build the matchmaker screens for the new history data: a per-user history view and a recent-matches dashboard (in progress).
+- Then verify the remaining Phase 6 scenario. The plan requires three: both people accept, one rejects outright, one ignores. The first two are covered; **an outright rejection has never been tested**, and Phase 6 can't honestly be called finished until it is.
+- Then the `v0.6.0` milestone marker, once all of the above is verified.
+- Still tracked: a clearer countdown clock for users.
