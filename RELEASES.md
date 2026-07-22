@@ -37,6 +37,46 @@ commit it points at.
 
 ---
 
+## v0.7.0 — Phase 7: Chat (2026-07-22)
+
+Phase 7 complete. Confirmed matches get a private, real-time chat, built on
+Stream Chat with all secret-signing server-side. CI green; 79 pgTAP + 21 shared
+unit tests.
+
+- **Token issuance (`stream-token` Edge Function, deployed).** Issues Stream
+  user tokens so the API secret never ships in the client. The Stream user id
+  is derived solely from the caller's verified Supabase JWT — the request body
+  is never read — so a caller cannot mint a token for anyone else. Verified live,
+  including that a body-supplied id is ignored.
+- **Chat UI.** Stream SwiftUI SDK (5.6.0) in the consumer app: inbox +
+  conversation, reachable from a confirmed match. Real messages between two
+  users verified on-device. Read receipts and typing indicators come native
+  with the SDK.
+- **Server-side channel creation (`stream-channel` Edge Function, deployed).**
+  On a confirmed match, upserts both Stream users and creates the channel —
+  something the client could not do reliably (a partner who never connected has
+  no Stream user). Participant-only and confirmed-only, enforced from the JWT;
+  idempotent. Verified against real Stream: non-participant → 403.
+- **48h inactivity archive** as pure view-state, derived from last activity
+  (never stored, no channel freeze): archived chats move to a collapsible
+  section and a new message brings them back. The clock starts at channel
+  creation, so a never-messaged match archives on the same rule.
+- **Block & report.** Block ends the match (terminal `blocked` state, chat
+  hidden both sides, messaging stops) and records a "do not re-pair" signal;
+  report uses canned reasons + optional note. Participant guard verified live.
+
+Migrations: `20260722090000_blocks_and_reports`. Edge Functions: `stream-token`,
+`stream-channel` (both deployed). Stream API secret held as a Supabase function
+secret; API key is public and ships in the app.
+
+**Not included:** the matchmaker moderation queue, bans, and global re-match
+prevention are Phase 11 (built on the blocks/reports data). Token refresh at the
+1h expiry and physical-device behaviour were not exercised. Block/report is
+compile- and logic-verified (pgTAP + a live participant-guard check) but was not
+driven through the UI on-device this session.
+
+---
+
 ## v0.6.0 — Phase 6: Match Creation & Confirmation (2026-07-22)
 
 Phase 6 complete. The plan's exit criteria — the "ignored = rejected" rule
