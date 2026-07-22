@@ -117,9 +117,13 @@
       "mcp__xcodebuild__record_sim_video",
 
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+
+      "mcp__revenuecat"
     ],
     "ask": [
+      "mcp__revenuecat__submit-products-to-store",
+      "mcp__revenuecat__grant-customer-entitlement",
       "Bash(git push --force*)",
       "Bash(git push -f*)",
       "Bash(git reset --hard*)",
@@ -146,6 +150,7 @@
       "Bash(defaults write *)",
       "Bash(killall *)",
       "mcp__supabase__delete_branch",
+      "mcp__revenuecat__delete-webhook-integration",
       "Read(//Users/**/.ssh/**)",
       "Read(//Users/**/.aws/**)",
       "Edit(//etc/**)"
