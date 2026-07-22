@@ -393,6 +393,13 @@ enabled = true
 # keys. See the header comment in functions/stream-token/index.ts.
 verify_jwt = false
 
+[functions.stream-channel]
+enabled = true
+# Same reasoning as stream-token: the function verifies the caller's JWT
+# itself via auth.getUser() (see functions/stream-channel/index.ts), so the
+# weaker gateway check stays off.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

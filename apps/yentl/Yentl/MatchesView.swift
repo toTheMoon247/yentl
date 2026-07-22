@@ -89,6 +89,15 @@ struct MatchesView: View {
         defer { isLoading = false }
         do {
             matches = try await matchService.myMatches()
+            // Slice 3: the moment a confirmed match is observed, make sure its
+            // Stream channel exists (server-side, idempotent). Fire-and-forget:
+            // opening the chat ensures again, so a miss here only delays the
+            // channel — and its 48h archive clock — until then.
+            for match in matches where match.state == .confirmed {
+                Task {
+                    try? await StreamChannelService.shared.ensureMatchChannel(matchID: match.matchID)
+                }
+            }
         } catch is CancellationError {
         } catch {
             errorMessage = error.localizedDescription

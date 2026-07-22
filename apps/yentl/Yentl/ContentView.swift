@@ -45,6 +45,9 @@ struct ContentView: View {
         // Stream user ids are the lowercase Supabase UUIDs (the exact string
         // the stream-token function mints tokens for).
         .task(id: auth.currentUserIDString) {
+            // Identity changed: drop the per-session ensured-channel cache so
+            // the next account re-verifies its own channels server-side.
+            StreamChannelService.shared.reset()
             if let id = auth.currentUserIDString {
                 let name = (try? await profiles.fetchMyProfile())?.displayName
                 await chat.connect(userID: id.lowercased(), displayName: name)

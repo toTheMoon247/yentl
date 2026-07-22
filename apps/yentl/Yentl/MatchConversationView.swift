@@ -77,18 +77,15 @@ struct MatchConversationView: View {
 
     private func openChannel() async {
         do {
-            // Slice 3: channel *creation* moves server-side — when a match is
-            // confirmed, the backend will create the `match-<id>` channel with
-            // both members (and upsert their Stream users). Until then it is
-            // created client-side here so the chat is testable end-to-end.
-            // `createChannelWithId` is safe to call on an existing channel, so
-            // this degrades gracefully; once Slice 3 lands, replace it with
-            // `chat.chatClient.channelController(for: channelID)` and drop the
-            // members parameter.
-            let controller = try chat.chatClient.channelController(
-                createChannelWithId: channelID,
-                members: [match.otherID.uuidString.lowercased()]
-            )
+            // Slice 3: channel creation is server-side. The stream-channel
+            // Edge Function verifies (from the JWT) that the caller is a
+            // participant of this confirmed match, upserts both Stream users
+            // — the thing a client could never do for a partner who has not
+            // connected yet — and creates-or-ensures `messaging:match-<id>`.
+            // It is idempotent, so ensuring on every open is safe; a repeat
+            // call is a session-cached no-op (StreamChannelService).
+            try await StreamChannelService.shared.ensureMatchChannel(matchID: match.matchID)
+            let controller = chat.chatClient.channelController(for: channelID)
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 controller.synchronize { error in
                     if let error {
