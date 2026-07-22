@@ -9,6 +9,10 @@ import YentlShared
 
 @main
 struct YentlApp: App {
+    // Phase 8: captures the APNs device token for Stream chat push.
+    // OneSignal's swizzling calls through to this delegate, so both SDKs
+    // coexist on the one token (see AppDelegate.swift for the evidence).
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var auth = AuthService.shared
     @State private var profiles = ProfileService.shared
     @State private var discovery = DiscoveryService.shared
