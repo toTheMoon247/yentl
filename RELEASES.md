@@ -37,6 +37,47 @@ commit it points at.
 
 ---
 
+## v0.8.0 — Phase 8: Notifications (2026-07-22)
+
+Push notifications, verified end-to-end on a **physical iPhone** — both push
+systems delivering side by side. CI green; 92 pgTAP + 25 shared unit tests.
+All secrets (OneSignal REST key, Stream secret, the APNs `.p8`) live server-side
+or in the vendor dashboards, never in the app or repo.
+
+- **Hybrid push, both proven on-device.** Match-lifecycle events (**created**,
+  **confirmed**) go through **OneSignal**; **new chat messages** go through
+  **Stream's native push**. The two share one APNs token without conflict —
+  OneSignal's registration swizzle calls through to the app's own token
+  callback, which forwards it to Stream, and OneSignal's extension passes
+  Stream's notifications through untouched.
+- **`notify` Edge Function (deployed).** Sends OneSignal lifecycle pushes to both
+  participants, addressed by `external_id` (the Supabase user id set via
+  `OneSignal.login`). Identity from the verified JWT; participant-or-staff gated;
+  **state-gated** so firing on every accept only pushes when the match actually
+  confirms; deterministic idempotency key.
+- **Notification settings + preferences.** A `notification_preferences` table
+  (own-row RLS) backs a settings screen with **Match** and **Message** toggles.
+  Match opt-out is enforced server-side in `notify` (opted-out recipients are
+  excluded); Message opt-out flips the Stream device registration at the source,
+  so chat pushes genuinely stop. Absent row = opted in (no backfill).
+- **Permission prompt moved into onboarding** (asked once, not on every home
+  appearance).
+- **Consumer-app device signing** configured (App Group + push entitlement + the
+  Notification Service Extension), enabling on-device builds.
+
+Migrations: `20260722100000_notification_preferences`. Edge Functions: `notify`
+(deployed; joins `stream-token`, `stream-channel`).
+
+**Not included** (deferred, tracked in `docs/implementation-plan.md`, none
+blocking): the *match-expiring-soon* reminder (needs a scheduler — deferred by
+choice), rejected/expired pushes (sensitive wording), push-tap deep-link routing
+(the data payload is sent but not yet routed on tap), a dedicated in-app
+notification center (the Matches/Chat tabs cover it for now), OneSignal Identity
+Verification (anti-impersonation lock — needs a signed-token endpoint first), and
+matchmaker-app pushes (a second OneSignal app).
+
+---
+
 ## v0.7.0 — Phase 7: Chat (2026-07-22)
 
 Phase 7 complete. Confirmed matches get a private, real-time chat, built on

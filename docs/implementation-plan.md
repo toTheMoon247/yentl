@@ -273,21 +273,26 @@ Goal: users and matchmakers get the right pushes at the right times.
 > App IDs; the matchmaker app has no chat, so only the consumer app needs Stream
 > push.
 
-- [ ] APNs `.p8` auth key uploaded to **both** OneSignal and Stream (same key)
-- [ ] OneSignal SDK in both apps (match-lifecycle events only)
-- [ ] Stream native push wired for the consumer app (new-message)
-- [ ] Device registration on login, deregistration on logout
-- [ ] Push permission prompts in onboarding
-- [ ] Notification triggers — match created, match confirmed, match rejected,
-      match expiring soon (e.g. 4h left) via OneSignal; new message via Stream
-- [ ] In-app notification center
-- [ ] Per-category notification settings screen
-- [ ] `aps-environment` entitlement + push-enabled provisioning on both app
-      targets (ties to the Apple Team ID)
+- [x] APNs `.p8` auth key uploaded to OneSignal and Stream (same key) — **consumer app only**; the matchmaker OneSignal app is deferred (its pushes aren't MVP-critical)
+- [x] OneSignal SDK in the consumer app (match-lifecycle events)
+- [x] Stream native push wired for the consumer app (new-message)
+- [x] Device registration on login, deregistration on logout
+- [x] Push permission prompt in onboarding
+- [x] Notification triggers — **match created + confirmed** via OneSignal; **new message** via Stream. *Verified on a physical device 2026-07-22.*
+- [x] Per-category notification settings screen (match / message toggles)
+- [x] `aps-environment` entitlement + push-enabled provisioning (consumer app + its extension)
 
-Exit: every match lifecycle event fires a push to the right user with the right
-deep link; a new chat message pushes via Stream. Verified on a physical device
-(APNs does not deliver to the simulator).
+**Deferred past `v0.8.0`** (tracked, none blocking):
+- [ ] **match expiring-soon reminder** — needs a scheduler (pg_cron + pg_net, or external cron); decided 2026-07-22 to defer past v0.8.0
+- [ ] **match rejected / expired** pushes — sensitive (must stay non-attributing); design left open
+- [ ] **push-tap deep-link routing** — the `data` payload is sent (route/match_id); the app doesn't yet route on tap
+- [ ] **in-app notification center** — largely covered today by the Matches and Chat tabs (which already surface match activity + unread messages); a dedicated screen is deferred unless it proves needed
+- [ ] **OneSignal Identity Verification** — the anti-impersonation lock; needs a signed identity-token endpoint before the dashboard toggle is enabled
+- [ ] **matchmaker-app pushes** — second OneSignal app; deferred with the matchmaker notification needs
+
+Exit (core, met at `v0.8.0`): match created/confirmed fire a push, and a new
+chat message pushes via Stream — **verified on a physical device** 2026-07-22
+(both push systems coexisting). The deferred items above are additive.
 
 ---
 
