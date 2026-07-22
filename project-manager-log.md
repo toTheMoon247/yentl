@@ -498,3 +498,28 @@ Payments day. Yentl can now charge the per-confirmed-date fee, and it's proven w
 - **Real Apple Sign-In** (currently a placeholder; Apple requires it since we offer Google).
 - **Launch prep** — the real Apple in-app-purchase product, App Store listing, then a TestFlight beta.
 - Smaller tracked polish: notification reminders, a clearer countdown for users, the "they already confirmed" hint on the pay screen.
+
+---
+
+## Day 15 — 2026-07-23
+
+Profile approval day — and the single biggest gate before real users, now cleared. From today, **no profile goes live until it's been screened**, and anything questionable waits for a matchmaker to decide. This is the thing that was blocking us from letting strangers upload photos, and it's on.
+
+**How it works, in plain terms.** When someone finishes their profile, it's automatically checked — the text and the photos — by an AI screener. If it's clean, it goes live on its own. If something looks off (explicit content, contact details slipped into a bio, or a photo that isn't a single real person), it's held back and shows up in a new **"Approvals" tab** in the matchmaker app, where a human makes the call: approve it, or send it back with a reason. The person whose profile is held sees a friendly "under review" screen, and if it's sent back, a clear "here's what to fix" screen — never raw technical wording.
+
+**The AI check paid off immediately.** On the very first real run, the screener caught a photo with **two people in it** that the standard "is this explicit?" check had waved through. That's exactly the kind of catfish/misleading-photo problem a human-matchmaker product can't afford to miss — and it's the reason we added a dedicated face check on top of the basic content check.
+
+**Kept the cost tiny and capped.** The owner set a **hard $5 spending limit** on the AI account with auto-recharge off and a monthly budget, so it can't run up a surprise bill. We also chose the **cheaper "mini" AI model** for the photo check to save money, and the basic content check is free. Real-world cost of screening every profile we have so far: a few cents.
+
+**Turned it on carefully, and reversibly.** The whole pipeline sat dormant behind an off-switch while we built it over three earlier steps, so it could never accidentally block a real user before it was ready. Today we: took a backup, flipped the switch on, then **ran all 40 test profiles through the real screener** (39 passed, 1 held — the two-person photo, which a matchmaker then approved), and finally confirmed the full loop live: a brand-new profile is correctly held for review, a clean one goes live by itself, and a matchmaker approval puts a held profile back into circulation. The switch is reversible if we ever need to pause it.
+
+**One honest note.** The owner's own profile was left live without force-screening it — it's the developer's account and we chose not to touch its sign-in. Everyone else's went through the real check.
+
+**Milestone reached: `v0.10.0`.** With approval live, the profile-screening requirement for an App Store submission is no longer a blocker.
+
+**Steps for next.** The list keeps narrowing toward launch:
+- **Safety & legal (Phase 11)** — the matchmaker moderation queue for reports, data export/delete for privacy law, terms & privacy pages.
+- **Real Apple Sign-In** (still a placeholder; Apple requires it because we offer Google).
+- **Launch prep** — the real Apple in-app-purchase product, the App Store listing, then a **TestFlight beta** so the owner and a friend can install both apps properly.
+- Still open from before: confirming Apple's stance on the date-fee purchase in writing; the clearer countdown clock; the notification anti-impersonation lock.
+- Smaller follow-up on today's work: re-screen a profile when a *live* user edits it (right now screening only runs on first submit and resubmits), and a push notification when a profile's review status changes.

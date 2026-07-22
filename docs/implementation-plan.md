@@ -455,8 +455,8 @@ Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a h
 - [x] AI screening edge function: text through moderation (slurs, profanity, contact info) — same function; contact info via local detector
 - [x] AI verdict storage with reasons — `profile_moderation` (latest verdict per profile, owner-readable for the later "why rejected" screen)
 - [x] Approval transition logic with audit trail (who, when, why) — `apply_ai_verdict` (service-role only) + `matchmaker_approve_profile` / `matchmaker_reject_profile` (staff, reject requires a reason) + append-only `profile_review_audit` (staff-only)
-- [ ] Verify screening against the REAL OpenAI API (all local tests ran against a mock; needs `OPENAI_API_KEY` set as a function secret)
-- [ ] Flip `profile_approval_enabled` flag to `true` — **last step, after the matchmaker queue UI + consumer states exist**
+- [x] Verify screening against the REAL OpenAI API — deployed 2026-07-23 with `OPENAI_API_KEY` set; vision face-check pinned to `gpt-4o-mini` (`OPENAI_VISION_MODEL`) for cost. Smoke test caught a two-person seed photo (`single_person=false`) that NSFW moderation passed — the face check earning its keep. Models used: `omni-moderation-latest` (free) + `gpt-4o-mini`.
+- [x] Flip `profile_approval_enabled` flag to `true` — **done 2026-07-23** (Slice 4). Live config toggle (`app_config`), reversible; the migration default stays `false`.
 
 ### Yentl Matchmaker — **Slice 2 built + locally verified 2026-07-23**
 - [x] Approval queue list view (newest-flagged first) — "Approvals" tab with
@@ -488,14 +488,24 @@ Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a h
       after a resubmit; deliberately non-blocking (missing function/key or any
       error is swallowed and the app routes on a re-read of `review_state`, so
       a screening failure can never strand the user)
-- [ ] Exercise the consumer states against REAL screening (flag ON + deployed
-      `screen-profile` with `OPENAI_API_KEY`) — Slice 4, alongside the flag flip;
-      Slice 3 was verified on the local stack with simulated states
+- [x] Exercise the consumer states against REAL screening (flag ON + deployed
+      `screen-profile` with `OPENAI_API_KEY`) — **Slice 4, 2026-07-23**. Verified
+      live end-to-end: a fresh `draft→live` completion is coerced to `pending_ai`
+      by the trigger (gate engaged); AI clean → `live`, AI-flagged → `pending_review`;
+      matchmaker approve → back to `live` (exercised the real staff RPC on Kanyin).
 
-### Data migration
-- [ ] Retroactively run every profile created during MVP through the new approval flow before opening to outside users
+### Data migration — **done 2026-07-23 (Slice 4)**
+- [x] Retroactively run every profile created during MVP through the new approval flow
+      before opening to outside users — screened all 40 seed profiles through real
+      OpenAI (via each seed's own JWT; the new `sb_secret_` key cannot be sent in a
+      function's `Authorization` bearer through the gateway, so per-user JWTs were
+      used). Result: 39 clean → `live`, 1 flagged (two-person photo) → `pending_review`,
+      then matchmaker-approved back to `live`. The one real profile (the developer's
+      own Google-OAuth account, already `live`) was left vouched, not force-screened.
 
-Exit: every new profile goes through AI + matchmaker review before going live; existing profiles have been retroactively reviewed; App Store submission is unblocked.
+Exit: **cleared 2026-07-23.** Every new profile now goes through AI + matchmaker review
+before going live (flag ON, verified live); existing profiles have been retroactively
+reviewed; the profile-approval requirement for App Store submission is unblocked.
 
 ---
 

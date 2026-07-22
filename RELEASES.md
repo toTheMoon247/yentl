@@ -37,6 +37,62 @@ commit it points at.
 
 ---
 
+## v0.10.0 — Phase 12: Profile Approval Pipeline (2026-07-23)
+
+The launch gate. Every new profile now goes through **AI screening** before it
+can go live; anything the AI flags waits for a **matchmaker** in the internal
+app. The pipeline was dormant behind a flag through Slices 1–3 and **turned ON,
+live, in Slice 4** — the last thing blocking untrusted users from uploading
+profiles, and with it the profile-approval requirement for App Store submission.
+CI green on `052a16b`; 52 shared unit tests; verified live end-to-end.
+
+- **Screening = OpenAI, done cheaply.** `screen-profile` Edge Function (deployed):
+  text + photos through `omni-moderation-latest` (free), a local contact-info
+  regex, and a **`gpt-4o-mini` vision face-check** (single real person) pinned via
+  `OPENAI_VISION_MODEL` for cost. Verdict → `apply_ai_verdict` (service-role only):
+  clean → `live`, flagged → `pending_review`, error → unchanged. Cost controlled
+  by a **$5 prepaid cap, auto-recharge OFF, $5 monthly budget**. The face-check is
+  a separate call from NSFW moderation — cleanly toggleable.
+- **Face-check earned its keep on the first real run:** a seed photo with two
+  people (`single_person=false`) that NSFW moderation passed was correctly caught.
+- **State machine + trigger.** `profiles.review_state`; a `before insert/update`
+  trigger coerces any client `→live` write to `pending_ai` when the flag is ON
+  (bypassed by the internal RPCs via a GUC), and is a **no-op when the flag is
+  OFF** — so the pre-Phase-12 "instant live" path is byte-for-byte unchanged.
+- **Matchmaker app:** an **Approvals tab** with a pending-count badge →
+  `pending_review_profiles()` (staff-only) → detail (full profile + AI flags) →
+  approve / reject-with-reason (`matchmaker_approve_profile` / `_reject_profile`,
+  append-only `profile_review_audit`).
+- **Consumer app:** completed profiles route on `review_state` —
+  `pending_ai`/`pending_review` → "under review", `rejected` → "needs changes"
+  (canned reason mapped to friendly copy, never a raw token; matchmaker note
+  surfaced) → edit & resubmit. Screening is fired non-blocking on submit, so a
+  missing key / function / network error never strands a user.
+- **Retroactive review (data migration).** All 40 seed profiles screened through
+  real OpenAI: 39 clean → `live`, 1 flagged → `pending_review`, then
+  matchmaker-approved back to `live`. The one real profile (developer's own
+  Google-OAuth account, already `live`) was left vouched.
+
+Migration: `20260722130000_profile_approval_pipeline`, `20260723090000_pending_review_list`.
+Edge Function: `screen-profile` (deployed; joins the Phase 7–9 functions). Secret
+`OPENAI_API_KEY` server-side only. The flag is a **live `app_config` toggle**
+(reversible); the migration default stays `false`, so CI and fresh environments
+are unaffected.
+
+**Operational note:** the live project has migrated to the new Supabase API key
+system (`sb_publishable_` / `sb_secret_`). The gateway rejects `sb_` keys sent in
+a function's `Authorization` bearer ("Conflicting API keys"), and the legacy JWT
+`service_role` no longer matches the function's `SUPABASE_SERVICE_ROLE_KEY` env —
+so server-to-function batch calls used each user's own JWT rather than a
+service-role bearer.
+
+**Not included** (still tracked): re-screening a *live* user who edits their
+profile (only completion/resubmit triggers screening today); push on review-state
+change. Phase 11 (safety/legal), real Apple Sign-In, and the real ASC IAP product
+remain before launch.
+
+---
+
 ## v0.9.0 — Phase 9: Payments (2026-07-22)
 
 The per-confirmed-date fee, via Apple IAP through **RevenueCat**. Verified
