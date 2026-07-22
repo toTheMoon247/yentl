@@ -300,22 +300,45 @@ chat message pushes via Stream — **verified on a physical device** 2026-07-22
 
 Goal: per-confirmed-date fee charged via Apple IAP at the moment both users confirm.
 
-- [x] **Decided 2026-07-22: build as Apple IAP.** The user's working assumption
-      is that Apple treats the per-confirmed-date fee as IAP-required, so we
-      plan and build for StoreKit 2. Caveat kept on the record: this has not
-      been confirmed in writing with Apple, and if a reviewer later rules the
-      fee is a real-world service (Stripe-eligible), the purchase layer would
-      need reworking. Worth confirming with Apple before Phase 9 build starts,
-      but it no longer blocks planning.
-- [ ] StoreKit 2 product setup in App Store Connect
-- [ ] Purchase UI on match-confirmed screen
-- [ ] Receipt validation via Supabase edge function
-- [ ] Wire up payer logic (OPEN: one side / both / split)
-- [ ] Refund / dispute handling (server-side webhook from App Store)
-- [ ] Anti-gaming: detect repeat confirm-then-ghost patterns (OPEN: rule definition)
-- [ ] Payment history per user
+**Decisions (2026-07-22):**
+- [x] **Build as Apple IAP.** Working assumption that Apple treats the
+      per-confirmed-date fee as IAP-required. Not confirmed in writing with
+      Apple; if a reviewer later rules it a real-world service (Stripe-eligible),
+      the purchase layer would need rework. Doesn't block building.
+- [x] **Via RevenueCat**, not raw StoreKit — chosen 2026-07-22. RevenueCat owns
+      the security-critical receipt validation and refund/dispute webhooks (the
+      riskiest parts to build ourselves). Its **entitlement** model doesn't fit a
+      per-match consumable, so **we keep our own `payments` ledger** mapping
+      RevenueCat transactions → matches; RevenueCat is a validation + webhook
+      layer. See `docs/tech-stack.md`.
+- [x] **Each participant pays their OWN fee** (symmetric, independent).
+- [x] **Paying unlocks the chat**: both accept → confirmed → each pays → once
+      BOTH have paid, the conversation (Phase 7) unlocks.
 
-Exit: a confirmed match triggers a successful IAP and the date is recorded as paid-confirmed.
+**Architecture:** RevenueCat SDK in the consumer app, its app-user-id set to the
+Supabase user id (same pattern as OneSignal/Stream). On purchase RevenueCat
+validates with Apple; the client then tells our `record-payment` Edge Function
+"paid for match X", which **re-verifies against RevenueCat's REST API** (never
+trusts the client) and writes a `payments` row tied to the match + user. A
+RevenueCat **webhook** Edge Function handles refunds/chargebacks → updates the
+ledger. `is_match_paid(match)` = both participants have a paid row; the chat gate
+reads it.
+
+**Build checklist:**
+- [ ] RevenueCat project/app for `com.yentl.app`; consumable product/offering
+      configured; linked to App Store Connect (IAP product + ASC API key)
+- [ ] RevenueCat SDK in the consumer app; app-user-id = Supabase user id
+- [ ] `payments` table + `is_match_paid()` helper; payment history per user
+- [ ] Purchase flow (buy the date fee via RevenueCat)
+- [ ] `record-payment` Edge Function (re-verifies via RevenueCat REST API)
+- [ ] RevenueCat webhook Edge Function → refunds/chargebacks update the ledger
+- [ ] "Pay to unlock chat" gate on the confirmed match (chat opens when both paid)
+- [ ] **Deferred:** the one-pays-other-ghosts refund/timeout policy, and
+      anti-gaming (repeat confirm-then-ghost) — data model tracks per-user
+      payment status so both are handleable later
+
+Exit: a confirmed match where both participants pay unlocks the chat, and each
+payment is recorded (RevenueCat-verified) as paid-confirmed.
 
 ---
 

@@ -11,4 +11,4 @@
 | Photos & Storage   | Supabase Storage               |
 | Profile Moderation | AI Screening + Human Approval  |
 | Push Notifications | OneSignal                      |
-| Payments           | Apple In-App Purchase (IAP)    |
+| Payments           | Apple IAP via **RevenueCat**   |
