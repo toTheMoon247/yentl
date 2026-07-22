@@ -214,7 +214,19 @@ Goal: confirmed matches get a private chat channel.
 - [ ] In-app chat UI (Yentl)
 - [ ] Chat list / inbox screen
 - [ ] Read receipts and typing indicators (Stream native)
-- [ ] Block / report in chat
+- [ ] Block / report in chat — **decided 2026-07-22**:
+  - **Block ends the match.** Blocking sets the match to a terminal `blocked`
+    state, hides the chat for both people, and stops all messaging. Because
+    Yentl is matchmaker-mediated, a block is a strong "do not pair us again"
+    signal and records a flag matchmakers will see (the moderation *queue*
+    itself is Phase 11).
+  - **Report uses canned reasons + an optional note** (harassment,
+    inappropriate photos, spam/scam, off-platform contact, other).
+  - Scope split: **Phase 7 builds the data model (`blocks`, `reports`) and the
+    in-chat block/report actions**; the matchmaker moderation queue, bans, and
+    the profile-level report flow are **Phase 11**, built on this same data.
+  - Global re-match prevention (blocking across all future discovery/queue) is
+    deferred to Phase 11 enforcement; Phase 7 ends only the current match.
 - [ ] Chat lifecycle — **decided 2026-07-22**, closing the last open question
       in this phase:
   - A chat **stays open after a date happens**. A confirmed date does not close
