@@ -1,6 +1,15 @@
 {
-  "originHash" : "824877db00d6f5bd52dc96bf8053f436aa4a972f697ea17006de7a8d0ed16404",
+  "originHash" : "d77119480a3c592be8bf2d13cca4ba67ece6f92d54832f5a77a3ba2679eb8b3c",
   "pins" : [
+    {
+      "identity" : "onesignal-xcframework",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/OneSignal/OneSignal-XCFramework",
+      "state" : {
+        "revision" : "e05f7193577ddf57f6bfe57776a56a16081db2e5",
+        "version" : "5.5.5"
+      }
+    },
     {
       "identity" : "stream-chat-swift",
       "kind" : "remoteSourceControl",

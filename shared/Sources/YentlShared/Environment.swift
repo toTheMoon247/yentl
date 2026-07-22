@@ -68,4 +68,22 @@ public enum AppEnvironment: String {
             fatalError("prod Stream Chat app not yet configured")
         }
     }
+
+    /// OneSignal App ID for the current environment (consumer app).
+    ///
+    /// Like `streamChatAPIKey`, this is public by design: the App ID only
+    /// identifies the OneSignal app in the client SDK. Sending notifications
+    /// requires the OneSignal REST API key (and the APNs .p8), which live in
+    /// OneSignal's dashboard / server-side and never ship in the client or
+    /// this repo.
+    public var oneSignalAppID: String {
+        switch self {
+        case .dev:
+            return "d0a0569f-87cd-418b-801b-104795255ce2"
+        case .staging:
+            fatalError("staging OneSignal app not yet configured")
+        case .prod:
+            fatalError("prod OneSignal app not yet configured")
+        }
+    }
 }

@@ -3,6 +3,7 @@
 //  Yentl
 //
 
+import OneSignalFramework
 import SwiftUI
 import YentlShared
 
@@ -13,6 +14,14 @@ struct YentlApp: App {
     @State private var discovery = DiscoveryService.shared
     @State private var matches = MatchService.shared
     @State private var chat = ChatService.shared
+
+    init() {
+        // Verbose SDK logging in DEBUG only — release builds stay quiet.
+        #if DEBUG
+        OneSignal.Debug.setLogLevel(.LL_VERBOSE)
+        #endif
+        OneSignal.initialize(AppEnvironment.current.oneSignalAppID, withLaunchOptions: nil)
+    }
 
     var body: some Scene {
         WindowGroup {

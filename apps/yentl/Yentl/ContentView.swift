@@ -3,6 +3,7 @@
 //  Yentl
 //
 
+import OneSignalFramework
 import SwiftUI
 import YentlShared
 
@@ -40,18 +41,22 @@ struct ContentView: View {
                     .task(id: signedInUserID) { await loadStage() }
             }
         }
-        // The Stream connection follows the Supabase session: connect on
-        // sign-in (or account switch), disconnect on sign-out. Lowercased id:
-        // Stream user ids are the lowercase Supabase UUIDs (the exact string
-        // the stream-token function mints tokens for).
+        // The Stream and OneSignal identities follow the Supabase session:
+        // connect/login on sign-in (or account switch), disconnect/logout on
+        // sign-out. Lowercased id: Stream user ids are the lowercase Supabase
+        // UUIDs (the exact string the stream-token function mints tokens
+        // for), and OneSignal uses the same external id so pushes target the
+        // same user.
         .task(id: auth.currentUserIDString) {
             // Identity changed: drop the per-session ensured-channel cache so
             // the next account re-verifies its own channels server-side.
             StreamChannelService.shared.reset()
             if let id = auth.currentUserIDString {
+                OneSignal.login(id.lowercased())
                 let name = (try? await profiles.fetchMyProfile())?.displayName
                 await chat.connect(userID: id.lowercased(), displayName: name)
             } else if case .signedOut = auth.state {
+                OneSignal.logout()
                 await chat.disconnect()
             }
         }
@@ -128,6 +133,8 @@ private struct AccountStageErrorView: View {
 /// Home for signed-in users with a completed profile — a tab bar with the
 /// discovery stack and the user's own profile.
 private struct SignedInHomeView: View {
+    @State private var hasRequestedPush = false
+
     var body: some View {
         TabView {
             DiscoveryView()
@@ -138,6 +145,18 @@ private struct SignedInHomeView: View {
                 .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
             ProfileTab()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+        }
+        // Notification permission: asked once the user is signed in with a
+        // completed profile — not mid-onboarding, and with no marketing
+        // pre-prompt. The system sheet is the whole UX for now; the real
+        // onboarding placement and a settings screen come in later Phase 8
+        // slices. Fired at most once per launch, and `fallbackToSettings:
+        // false` so a user who already declined is NOT nagged to Settings on
+        // every appearance — that belongs on the future settings screen.
+        .onAppear {
+            guard !hasRequestedPush else { return }
+            hasRequestedPush = true
+            OneSignal.Notifications.requestPermission({ _ in }, fallbackToSettings: false)
         }
     }
 }
