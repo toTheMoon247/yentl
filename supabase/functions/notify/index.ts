@@ -20,8 +20,12 @@
 //      the first accept leaves the match pending (409, no push), the second
 //      flips it to confirmed and the push goes out exactly then. It also stops
 //      anyone re-pushing "new match" for long-resolved matches.
-//   4. pushes to BOTH participants (never the matchmaker) through OneSignal's
-//      REST API, targeting include_aliases.external_id.
+//   4. checks each participant's notification_preferences.match_pushes
+//      (service-role read; NO ROW MEANS OPTED IN) and drops anyone who turned
+//      match pushes off. If neither participant is opted in, returns 200
+//      sent:false without calling OneSignal at all.
+//   5. pushes to the remaining participants (never the matchmaker) through
+//      OneSignal's REST API, targeting include_aliases.external_id.
 //
 // Content is deliberately NON-ATTRIBUTING, matching the app's tone: nothing
 // sent here ever says who accepted or rejected whom. (That is also why
@@ -204,7 +208,34 @@ Deno.serve(async (req) => {
     }
 
     // -----------------------------------------------------------------------
-    // 5. Send the push to BOTH participants via OneSignal's REST API.
+    // 5. Respect each participant's match-push preference. Absence of a
+    //    notification_preferences row means opted IN (the table is written
+    //    lazily, only when someone touches a toggle), so only an explicit
+    //    match_pushes = false excludes a recipient. A failed lookup is a 500,
+    //    not a send: pushing to someone who opted out is the one outcome this
+    //    step exists to prevent.
+    // -----------------------------------------------------------------------
+    const { data: prefRows, error: prefErr } = await admin
+      .from("notification_preferences")
+      .select("user_id, match_pushes")
+      .in("user_id", [userA, userB]);
+    if (prefErr) {
+      console.error("notify: preferences lookup failed:", prefErr.message);
+      return json({ error: "internal error" }, 500);
+    }
+    const optedOut = new Set(
+      (prefRows ?? [])
+        .filter((row) => row.match_pushes === false)
+        .map((row) => String(row.user_id).toLowerCase()),
+    );
+    const recipients = [userA, userB].filter((id) => !optedOut.has(id));
+    if (recipients.length === 0) {
+      // Both participants opted out — a normal outcome, not an error.
+      return json({ sent: false, notification_id: null }, 200);
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. Send the push to the opted-in participants via OneSignal's REST API.
     //    Current scheme (docs, 2026): POST {base}/notifications?c=push with
     //    `Authorization: Key <App API key>`; recipients go in
     //    include_aliases.external_id + target_channel "push".
@@ -221,7 +252,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         app_id: appId,
-        include_aliases: { external_id: [userA, userB] },
+        include_aliases: { external_id: recipients },
         target_channel: "push",
         headings: { en: spec.heading },
         contents: { en: spec.content },

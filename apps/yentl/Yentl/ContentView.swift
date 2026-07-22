@@ -48,9 +48,11 @@ struct ContentView: View {
         // for), and OneSignal uses the same external id so pushes target the
         // same user.
         .task(id: auth.currentUserIDString) {
-            // Identity changed: drop the per-session ensured-channel cache so
-            // the next account re-verifies its own channels server-side.
+            // Identity changed: drop the per-user caches so the next account
+            // re-verifies its channels and re-reads its own notification
+            // preferences instead of inheriting the previous user's.
             StreamChannelService.shared.reset()
+            NotificationPreferencesService.shared.reset()
             if let id = auth.currentUserIDString {
                 OneSignal.login(id.lowercased())
                 let name = (try? await profiles.fetchMyProfile())?.displayName
@@ -133,9 +135,12 @@ private struct AccountStageErrorView: View {
 /// Home for signed-in users with a completed profile — a tab bar with the
 /// discovery stack and the user's own profile.
 private struct SignedInHomeView: View {
-    @State private var hasRequestedPush = false
-
     var body: some View {
+        // Note: the push-permission request no longer lives here — it moved
+        // to its own step at the end of onboarding (OnboardingFlow), asked
+        // once instead of on every home appearance. Users who decline can
+        // enable pushes any time in iOS Settings; the in-app toggles live in
+        // Profile → Notifications.
         TabView {
             DiscoveryView()
                 .tabItem { Label("Discover", systemImage: "sparkles") }
@@ -146,18 +151,6 @@ private struct SignedInHomeView: View {
             ProfileTab()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }
-        // Notification permission: asked once the user is signed in with a
-        // completed profile — not mid-onboarding, and with no marketing
-        // pre-prompt. The system sheet is the whole UX for now; the real
-        // onboarding placement and a settings screen come in later Phase 8
-        // slices. Fired at most once per launch, and `fallbackToSettings:
-        // false` so a user who already declined is NOT nagged to Settings on
-        // every appearance — that belongs on the future settings screen.
-        .onAppear {
-            guard !hasRequestedPush else { return }
-            hasRequestedPush = true
-            OneSignal.Notifications.requestPermission({ _ in }, fallbackToSettings: false)
-        }
     }
 }
 
@@ -166,6 +159,7 @@ private struct SignedInHomeView: View {
 private struct ProfileTab: View {
     @Environment(AuthService.self) private var auth
     @State private var showingEdit = false
+    @State private var showingNotificationSettings = false
     @State private var reloadID = 0
     #if DEBUG
     @State private var showingTestLogin = false
@@ -195,8 +189,20 @@ private struct ProfileTab: View {
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingNotificationSettings = true
+                    } label: {
+                        Image(systemName: "bell.badge")
+                    }
+                    .accessibilityIdentifier("notification-settings")
+                    .accessibilityLabel("Notification settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     SignOutButton()
                 }
+            }
+            .navigationDestination(isPresented: $showingNotificationSettings) {
+                NotificationSettingsView()
             }
         }
         .sheet(isPresented: $showingEdit) {

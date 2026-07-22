@@ -175,8 +175,22 @@ final class ChatService {
         registerPushDeviceIfReady()
     }
 
+    /// Applies the user's message-notification preference immediately (called
+    /// by the Notification Settings screen *after* it persisted the value):
+    /// OFF removes the Stream device so chat pushes stop for this phone; ON
+    /// re-registers it so they resume. Best-effort, like everything here.
+    func messagePushPreferenceChanged(enabled: Bool) async {
+        if enabled {
+            registerPushDeviceIfReady()
+        } else {
+            await removePushDevice()
+        }
+    }
+
     /// Registers this device for the connected user's chat pushes, once both
-    /// the APNs token and a connected Stream session exist. Safe to call any
+    /// the APNs token and a connected Stream session exist — and only if the
+    /// user hasn't turned message notifications off (the stored preference is
+    /// checked asynchronously; no row / unreadable = ON). Safe to call any
     /// number of times; re-registration of the same token is skipped.
     private func registerPushDeviceIfReady() {
         guard case .connected = connectionState else {
@@ -193,15 +207,28 @@ final class ChatService {
         let deviceID = Self.deviceID(fromToken: token)
         guard registeredPushDeviceID != deviceID else { return }
 
-        Self.logger.info("Stream push: registering device with provider \(Self.streamPushProviderName)")
-        chatClient.currentUserController().addDevice(
-            .apn(token: token, providerName: Self.streamPushProviderName)
-        ) { [weak self] error in
-            if let error {
-                ChatService.logger.error("Stream push: device registration failed: \(String(describing: error))")
-            } else {
-                self?.registeredPushDeviceID = deviceID
-                ChatService.logger.info("Stream push: device registered")
+        Task { // inherits @MainActor
+            guard await NotificationPreferencesService.shared.messagePushesEnabled() else {
+                Self.logger.info("Stream push: message notifications are off — not registering device")
+                return
+            }
+            // Re-check: the session may have changed while the preference
+            // loaded (sign-out, account switch, token rotation, or a parallel
+            // call that already registered this token).
+            guard case .connected = connectionState,
+                  apnsDeviceToken == token,
+                  registeredPushDeviceID != deviceID else { return }
+
+            Self.logger.info("Stream push: registering device with provider \(Self.streamPushProviderName)")
+            chatClient.currentUserController().addDevice(
+                .apn(token: token, providerName: Self.streamPushProviderName)
+            ) { [weak self] error in
+                if let error {
+                    ChatService.logger.error("Stream push: device registration failed: \(String(describing: error))")
+                } else {
+                    Task { @MainActor in self?.registeredPushDeviceID = deviceID }
+                    ChatService.logger.info("Stream push: device registered")
+                }
             }
         }
     }
