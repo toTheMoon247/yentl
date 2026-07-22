@@ -466,3 +466,35 @@ A long, productive session that took the project from "matches" all the way thro
 - Finish the smaller remaining notification pieces (expiry reminders, the in-app notification list and per-type settings screen) when convenient.
 - Begin **Phase 9 (payments)** — building the per-date fee on Apple's in-app purchase, and ideally confirming Apple's stance in writing first.
 - Still tracked: the clearer countdown clock on the consumer side, and turning on the notification anti-impersonation lock.
+
+---
+
+## Day 14 — 2026-07-22
+
+Payments day. Yentl can now charge the per-confirmed-date fee, and it's proven working end to end — including that people can't cheat it.
+
+**The big call: we're using RevenueCat, not raw Apple code.** Partway in, we stepped back and chose to run payments through **RevenueCat** (a specialist payments service, which the owner already uses in another app) rather than talk to Apple's payment system ourselves. *Why:* the riskiest, most security-sensitive part of taking money is verifying a payment is genuine — a bug there means people get free dates. RevenueCat handles that verification (and refunds) with battle-tested code, so we don't own that risk. The one nuance recorded honestly: RevenueCat is built around "subscriptions/memberships", and our fee is a one-off *per-date* charge, so we still keep our own simple record of who paid for which date — RevenueCat just does the verifying.
+
+**How the fee works** (decided with the owner):
+- **Each person pays their own fee**, and **paying unlocks the chat** — both people confirm the date with a small fee, and only when both have paid does the conversation open. A clear, fair value exchange.
+- If one pays and the other never does, the payer is owed a refund — that policy is noted for later, but the system already tracks each person's payment separately so it's handleable.
+
+**Most of the setup was done for us, by the assistant.** The owner connected RevenueCat's official assistant tool, and from there the assistant set up the product, price, the "offering", and the refund webhook directly — the owner only had to create the project, approve access once, and generate two keys. A nice reduction in manual dashboard clicking.
+
+**A smart shortcut: no App Store paperwork needed yet.** RevenueCat has a built-in "Test Store" that lets real purchases run in the simulator without any App Store Connect setup. So we built and fully tested the whole payment flow now, and left the real Apple store product as a launch-time step.
+
+**Proven end to end — including fraud protection.** In one continuous test on a real-style run: two test users each bought their date fee, and the moment the second paid, the chat **unlocked and opened by itself**. Separately, we confirmed that a made-up "I paid" claim with no real purchase is **rejected** — the server checks every payment with RevenueCat before believing it. That fraud check is the single most important thing to get right with money, and it works.
+
+**Assumptions / open items worth flagging.**
+- **The big open question remains:** we still haven't confirmed *in writing with Apple* that a real-world date fee is allowed as an in-app purchase. We're building on the assumption it is; if a reviewer disagrees, the payment piece would need rework. Worth resolving before launch.
+- Secrets (the payment keys) live only on the server, never in the app or the public code — consistent with everything else.
+- Deferred to launch prep: creating the real Apple in-app-purchase product and testing a real (non-test) purchase on a device.
+
+**Milestone reached: `v0.9.0`.** Ten of the fourteen phases are done. The product now does everything end to end — profiles, discovery, matchmaker decisions, matches, chat, notifications, and payments — most of it verified on real devices.
+
+**Steps for next.** The remaining work shifts from building features to getting launch-ready:
+- **Profile approval (Phase 12)** — the big one, and a hard requirement before real users can upload photos: automatic screening plus matchmaker review. Nothing ships to outside users without it.
+- **Safety & legal (Phase 11)** — the matchmaker moderation queue, data export/delete for privacy law, terms & privacy pages.
+- **Real Apple Sign-In** (currently a placeholder; Apple requires it since we offer Google).
+- **Launch prep** — the real Apple in-app-purchase product, App Store listing, then a TestFlight beta.
+- Smaller tracked polish: notification reminders, a clearer countdown for users, the "they already confirmed" hint on the pay screen.
