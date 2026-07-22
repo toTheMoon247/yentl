@@ -337,6 +337,26 @@ reads it.
       anti-gaming (repeat confirm-then-ghost) — data model tracks per-user
       payment status so both are handleable later
 
+**RevenueCat API notes (verified against the current docs 2026-07-22, while
+building the backend slice):**
+- Server-side verification uses REST API **v2**:
+  `GET https://api.revenuecat.com/v2/projects/{project_id}/customers/{app_user_id}/purchases`
+  with `Authorization: Bearer <secret key>` (v2 requires the Bearer prefix,
+  unlike v1). Each purchase carries `store_purchase_identifier` (the App Store
+  transaction id), a `status` that reads `refunded` when revoked, and
+  RevenueCat's *internal* `product_id`. Function secrets/env therefore:
+  `REVENUECAT_SECRET_KEY`, `REVENUECAT_PROJECT_ID` (v2 paths are
+  project-scoped), optional `REVENUECAT_PRODUCT_ID` (pin the date-fee
+  product), `REVENUECAT_API_BASE_URL` (local-mock override).
+- Webhooks POST `{ "api_version": "1.0", "event": { type, app_user_id,
+  transaction_id, ... } }` where `transaction_id` is the store transaction id
+  — the same value the ledger dedups on. Auth is a dashboard-configured
+  Authorization header sent verbatim with every delivery
+  (`REVENUECAT_WEBHOOK_AUTH`); optional HMAC signing
+  (`X-RevenueCat-Webhook-Signature`) can be layered on later. Refunds arrive
+  as `REFUND` (or `CANCELLATION` for a non-renewing purchase);
+  `REFUND_REVERSED` overturns one.
+
 Exit: a confirmed match where both participants pay unlocks the chat, and each
 payment is recorded (RevenueCat-verified) as paid-confirmed.
 
