@@ -37,6 +37,44 @@ commit it points at.
 
 ---
 
+## v0.9.0 — Phase 9: Payments (2026-07-22)
+
+The per-confirmed-date fee, via Apple IAP through **RevenueCat**. Verified
+end-to-end: two real (Test Store) purchases unlocked a chat in one continuous
+run, and a forged purchase was rejected. CI green; 35 shared unit + 108 pgTAP.
+
+- **Model:** each participant pays their own fee; once **both** have paid, the
+  chat unlocks. RevenueCat validates the purchase with Apple; we keep our own
+  per-match `payments` ledger (its entitlement model can't express a per-match
+  consumable), and a RevenueCat webhook handles refunds.
+- **`record-payment` Edge Function (deployed).** Identity from the verified JWT;
+  participant + confirmed-match gated; then **independently re-verifies** the
+  purchase against RevenueCat's REST API (secret key, server-side) before
+  writing a paid row. Idempotent on the store transaction id. **Verified live:**
+  a real purchase records; a **fake transaction is rejected 402** — you cannot
+  fake your way past the paywall.
+- **`revenuecat-webhook` (deployed).** Constant-time shared-secret auth (fails
+  closed); flips rows to refunded on refund/cancellation, restores on reversal.
+  Webhook registered in RevenueCat and verified live.
+- **`payments` ledger + `is_match_paid(match)`** (both participants paid) — the
+  chat-unlock predicate. Own-or-staff RLS; writes only via the functions.
+- **Consumer app:** RevenueCat SDK (Test Store, so purchases work in the
+  simulator with no App Store Connect), app-user-id = the Supabase user id, and
+  a "pay to unlock chat" gate: pay → "waiting for them" → chat opens
+  automatically when both have paid. Verified on-device flow in the simulator.
+
+Migration: `20260722110000_payments`. Edge Functions: `record-payment`,
+`revenuecat-webhook` (deployed; join `stream-token`, `stream-channel`, `notify`).
+Secrets (`REVENUECAT_SECRET_KEY` / `PROJECT_ID` / `WEBHOOK_AUTH`) server-side only.
+
+**Not included** (deferred, tracked): the **real App Store Connect IAP product**
++ ASC link (launch prep — dev uses RevenueCat's Test Store); the
+one-pays-then-ghosts refund/timeout policy; anti-gaming (repeat confirm-then-ghost).
+The **Apple IAP-eligibility of a real-world date fee is still unconfirmed** with
+Apple — a reviewer ruling otherwise would reshape the purchase layer.
+
+---
+
 ## v0.8.0 — Phase 8: Notifications (2026-07-22)
 
 Push notifications, verified end-to-end on a **physical iPhone** — both push

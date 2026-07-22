@@ -324,41 +324,27 @@ RevenueCat **webhook** Edge Function handles refunds/chargebacks → updates the
 ledger. `is_match_paid(match)` = both participants have a paid row; the chat gate
 reads it.
 
-**Build checklist:**
-- [ ] RevenueCat project/app for `com.yentl.app`; consumable product/offering
-      configured; linked to App Store Connect (IAP product + ASC API key)
-- [ ] RevenueCat SDK in the consumer app; app-user-id = Supabase user id
-- [x] `payments` table + `is_match_paid()` helper + `payment_history_for_user()`
-      — migration `20260722110000_payments.sql`, **applied to live** 2026-07-22
-- [ ] Purchase flow (buy the date fee via RevenueCat)
-- [x] `record-payment` Edge Function (re-verifies via RevenueCat REST v2) — built,
-      **not yet deployed** (needs the RevenueCat secrets)
-- [x] RevenueCat webhook Edge Function → refunds update the ledger — built, **not
-      yet deployed**
-- [ ] "Pay to unlock chat" gate on the confirmed match (chat opens when both paid)
+**Build checklist:** — **core complete + verified end-to-end 2026-07-22 (`v0.9.0`)**
+- [x] RevenueCat project/app + consumable product/offering configured — via the
+      **Test Store** (works in the simulator, no App Store Connect). The real
+      App Store IAP product + ASC link is **launch prep** (see below).
+- [x] RevenueCat SDK in the consumer app; app-user-id = Supabase user id
+- [x] `payments` table + `is_match_paid()` + `payment_history_for_user()` — live
+- [x] Purchase flow (buy the date fee via RevenueCat) — verified in-sim
+- [x] `record-payment` Edge Function (re-verifies via RevenueCat REST v2) —
+      deployed; **verified live** with a real purchase + a fraud rejection (402)
+- [x] RevenueCat webhook Edge Function → refunds update the ledger — deployed,
+      webhook registered, auth verified live
+- [x] "Pay to unlock chat" gate — **verified end-to-end**: two real Test Store
+      purchases → both ledger rows → `is_match_paid` true → chat auto-unlocked
+- [ ] **Launch prep (deferred):** real App Store Connect IAP product
+      `com.yentl.app.date_fee` + ASC API key, swap the Test Store for the App
+      Store app in RevenueCat, real sandbox/production purchase test on device.
 - [ ] **Deferred:** the one-pays-other-ghosts refund/timeout policy, and
-      anti-gaming (repeat confirm-then-ghost) — data model tracks per-user
-      payment status so both are handleable later
-
-> **HANDOFF STATE (2026-07-22, mid-session restart).** Backend is done and
-> committed (`b872925`); the migration is live. Next steps, in order:
-> 1. The **RevenueCat MCP** is registered for this repo (`revenuecat` →
->    `https://mcp.revenuecat.ai/mcp`) but loads only on session start — after a
->    restart, authenticate it via `/mcp` (OAuth to the RevenueCat account).
-> 2. Get the RevenueCat **public SDK key** (`appl_…`), a **secret key** (`sk_…`),
->    and the **project id** — via the MCP if it exposes them, else the dashboard.
-> 3. Set Supabase secrets: `REVENUECAT_SECRET_KEY`, `REVENUECAT_PROJECT_ID`,
->    `REVENUECAT_WEBHOOK_AUTH` (a chosen shared secret). Then **deploy**
->    `record-payment` and `revenuecat-webhook` (`--no-verify-jwt`).
-> 4. App-side slice: add the RevenueCat SDK to the consumer app, set its
->    app-user-id to the Supabase user id (mirror OneSignal/Stream), buy the fee,
->    call `record-payment`.
-> 5. Chat gate: block the conversation until `is_match_paid(match)` is true.
-> 6. **App Store Connect** (user, Apple-side, at real-purchase test): create the
->    `com.yentl.app.date_fee` consumable, link it to RevenueCat, configure the
->    Offering + the webhook (URL + Authorization header = `REVENUECAT_WEBHOOK_AUTH`).
-> RevenueCat REST v2 / webhook specifics are in the "RevenueCat API notes" block
-> the backend agent added above.
+      anti-gaming (repeat confirm-then-ghost) — the data model already tracks
+      per-user payment status so both are handleable later.
+- [ ] **Minor (tracked):** the pay gate shows generic copy on both sides — no
+      "they already confirmed!" hint (a conversion nicety, not a defect).
 
 **RevenueCat API notes (verified against the current docs 2026-07-22, while
 building the backend slice):**
