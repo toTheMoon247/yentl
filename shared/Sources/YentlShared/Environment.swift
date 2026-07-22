@@ -50,4 +50,22 @@ public enum AppEnvironment: String {
             fatalError("prod Supabase project not yet configured")
         }
     }
+
+    /// Stream Chat API key for the current environment.
+    ///
+    /// Like `supabasePublishableKey`, this is public by design: the API key
+    /// only identifies the Stream app. Chat access is gated by per-user JWTs
+    /// signed with the Stream API *secret*, which lives solely in the
+    /// `stream-token` Edge Function's environment and never ships in the
+    /// client or this repo.
+    public var streamChatAPIKey: String {
+        switch self {
+        case .dev:
+            return "63zc3wmbpa7v"
+        case .staging:
+            fatalError("staging Stream Chat app not yet configured")
+        case .prod:
+            fatalError("prod Stream Chat app not yet configured")
+        }
+    }
 }
