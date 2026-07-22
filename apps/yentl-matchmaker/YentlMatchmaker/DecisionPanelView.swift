@@ -339,7 +339,13 @@ struct DecisionPanelView: View {
         isMatching = true
         defer { isMatching = false }
         do {
-            try await matches.createMatch(pinnedID, candidate.id)
+            let matchID = try await matches.createMatch(pinnedID, candidate.id)
+            // Phase 8: tell both people they have a new match, via the notify
+            // Edge Function (the matchmaker app has a Supabase session, so it
+            // can invoke it without the OneSignal SDK). Fire-and-forget: a
+            // failed push must never block or fail the match creation.
+            let service = matches
+            Task { await service.sendMatchPush(matchID: matchID, event: .created) }
             await load()
         } catch is CancellationError {
         } catch {

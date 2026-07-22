@@ -77,6 +77,25 @@ final class MatchServiceTests: XCTestCase {
         XCTAssertEqual(MatchService.normalized("  hey \n"), "hey")
     }
 
+    /// The notify Edge Function's body: exact keys, or the (fire-and-forget)
+    /// push call 400s server-side and every lifecycle push silently vanishes.
+    func testNotifyParamsEncodesSnakeCaseKeys() throws {
+        let matchID = UUID()
+        let json = try encodeToJSON(MatchService.NotifyParams(
+            matchID: matchID, event: MatchPushEvent.confirmed.rawValue
+        ))
+        XCTAssertEqual(Set(json.keys), ["match_id", "event"])
+        XCTAssertEqual(json["match_id"] as? String, matchID.uuidString)
+        XCTAssertEqual(json["event"] as? String, "match_confirmed")
+    }
+
+    /// Event raw values must match the notify function's accepted event names
+    /// (supabase/functions/notify/index.ts EVENTS keys).
+    func testMatchPushEventRawValuesMatchEdgeFunction() {
+        XCTAssertEqual(MatchPushEvent.created.rawValue, "match_created")
+        XCTAssertEqual(MatchPushEvent.confirmed.rawValue, "match_confirmed")
+    }
+
     private func encodeToJSON(_ value: some Encodable) throws -> [String: Any] {
         let data = try JSONEncoder().encode(value)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])

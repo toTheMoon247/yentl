@@ -400,6 +400,13 @@ enabled = true
 # weaker gateway check stays off.
 verify_jwt = false
 
+[functions.notify]
+enabled = true
+# Same reasoning as stream-token: the function verifies the caller's JWT
+# itself via auth.getUser() (see functions/notify/index.ts), so the weaker
+# gateway check — which would accept the anon key — stays off.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

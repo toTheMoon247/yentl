@@ -14,6 +14,15 @@ public enum MatchError: LocalizedError {
     }
 }
 
+/// Lifecycle push events the `notify` Edge Function accepts. Raw values must
+/// match the function's `EVENTS` keys (supabase/functions/notify/index.ts).
+public enum MatchPushEvent: String, Sendable {
+    /// Matchmaker created a pending match — "You have a new match!".
+    case created = "match_created"
+    /// Both sides accepted — "It's a match!".
+    case confirmed = "match_confirmed"
+}
+
 /// Match creation (matchmaker) and the consumer's match list + responses.
 @MainActor
 @Observable
@@ -107,6 +116,30 @@ public final class MatchService {
         }
     }
 
+    /// Asks the `notify` Edge Function to push a lifecycle notification for a
+    /// match to BOTH participants (Phase 8). Best-effort BY DESIGN: this never
+    /// throws — a missed push must never block or fail the match action that
+    /// triggered it, so call sites just `Task { await ... }` and move on.
+    ///
+    /// The server re-checks everything that matters (caller is a participant
+    /// or staff, and the match is actually in the state the event claims), so
+    /// firing `.confirmed` after every accept is safe: the accept that merely
+    /// leaves the match pending gets a 409 and no push is sent.
+    public func sendMatchPush(matchID: UUID, event: MatchPushEvent) async {
+        do {
+            try await Backend.supabase.functions.invoke(
+                "notify",
+                options: FunctionInvokeOptions(body: NotifyParams(
+                    matchID: matchID, event: event.rawValue
+                ))
+            )
+        } catch is CancellationError {
+        } catch {
+            // Log-only: fire-and-forget by contract (see above).
+            print("MatchService: \(event.rawValue) push for \(matchID) failed: \(error)")
+        }
+    }
+
     /// Trims a free-text note; empty becomes nil so the RPC's default (null)
     /// applies instead of storing an empty string.
     nonisolated static func normalized(_ note: String?) -> String? {
@@ -144,5 +177,17 @@ public final class MatchService {
         let reason: String
         let match: UUID?
         let note: String?
+    }
+
+    /// Body for the `notify` Edge Function. Internal so the key-drift unit
+    /// test can see it: a drifted key would 400 server-side and every push
+    /// would silently vanish (the call is fire-and-forget).
+    struct NotifyParams: Encodable {
+        let matchID: UUID
+        let event: String
+        enum CodingKeys: String, CodingKey {
+            case matchID = "match_id"
+            case event
+        }
     }
 }

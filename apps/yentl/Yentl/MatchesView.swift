@@ -260,6 +260,17 @@ private struct MatchDetailView: View {
         defer { isResponding = false }
         do {
             try await matchService.respond(matchID: match.matchID, accept: accept)
+            if accept {
+                // Phase 8: if this accept was the second one, the match just
+                // became confirmed — ask the notify function to push "It's a
+                // match!" to both people. The server only sends when the match
+                // is actually confirmed (a first accept gets 409, no push), so
+                // firing on every accept is correct. Fire-and-forget: a failed
+                // push never blocks or fails the response itself.
+                let service = matchService
+                let matchID = match.matchID
+                Task { await service.sendMatchPush(matchID: matchID, event: .confirmed) }
+            }
             onResolved()
         } catch is CancellationError {
         } catch {
