@@ -250,14 +250,32 @@ Exit: two test users who both confirm a match can chat in real time.
 
 Goal: users and matchmakers get the right pushes at the right times.
 
-- [ ] OneSignal SDK in both apps
+> **Push split — decided 2026-07-22 (hybrid):** new-**message** pushes go
+> through **Stream's native chat push**, not OneSignal. Stream already tracks
+> unread counts and online state, so it produces correct message notifications
+> and badging for free; relaying chat events to OneSignal ourselves would mean
+> reimplementing that. **OneSignal carries only the match-lifecycle events**
+> (created, confirmed, expiring-soon). Consequence: the **same APNs `.p8` key is
+> uploaded to two places** — OneSignal *and* the Stream dashboard. Yentl is two
+> apps (`com.yentl.app`, `com.yentl.matchmaker`) → **two OneSignal apps**, two
+> App IDs; the matchmaker app has no chat, so only the consumer app needs Stream
+> push.
+
+- [ ] APNs `.p8` auth key uploaded to **both** OneSignal and Stream (same key)
+- [ ] OneSignal SDK in both apps (match-lifecycle events only)
+- [ ] Stream native push wired for the consumer app (new-message)
 - [ ] Device registration on login, deregistration on logout
 - [ ] Push permission prompts in onboarding
-- [ ] Notification triggers — match created, match confirmed, match rejected, match expiring soon (e.g. 4h left), new message
+- [ ] Notification triggers — match created, match confirmed, match rejected,
+      match expiring soon (e.g. 4h left) via OneSignal; new message via Stream
 - [ ] In-app notification center
 - [ ] Per-category notification settings screen
+- [ ] `aps-environment` entitlement + push-enabled provisioning on both app
+      targets (ties to the Apple Team ID)
 
-Exit: every match lifecycle event fires a push to the right user with the right deep link.
+Exit: every match lifecycle event fires a push to the right user with the right
+deep link; a new chat message pushes via Stream. Verified on a physical device
+(APNs does not deliver to the simulator).
 
 ---
 
