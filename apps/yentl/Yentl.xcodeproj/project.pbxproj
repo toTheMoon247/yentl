@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0E3169712FCB979800E0D195 /* YentlShared in Frameworks */ = {isa = PBXBuildFile; productRef = 0E3169702FCB979800E0D195 /* YentlShared */; };
+		0EC7A7052FCC100100E0D195 /* StreamChat in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7032FCC100100E0D195 /* StreamChat */; };
+		0EC7A7062FCC100100E0D195 /* StreamChatSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +72,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E3169712FCB979800E0D195 /* YentlShared in Frameworks */,
+				0EC7A7052FCC100100E0D195 /* StreamChat in Frameworks */,
+				0EC7A7062FCC100100E0D195 /* StreamChatSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +135,8 @@
 			name = Yentl;
 			packageProductDependencies = (
 				0E3169702FCB979800E0D195 /* YentlShared */,
+				0EC7A7032FCC100100E0D195 /* StreamChat */,
+				0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */,
 			);
 			productName = Yentl;
 			productReference = 0E3168D82FCB3BCB00E0D195 /* Yentl.app */;
@@ -216,6 +222,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				0E31696F2FCB979800E0D195 /* XCLocalSwiftPackageReference "../../shared" */,
+				0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */,
+				0EC7A7022FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swiftui" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E3168D92FCB3BCB00E0D195 /* Products */;
@@ -604,10 +612,39 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/GetStream/stream-chat-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.6.0;
+			};
+		};
+		0EC7A7022FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swiftui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/GetStream/stream-chat-swiftui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		0E3169702FCB979800E0D195 /* YentlShared */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = YentlShared;
+		};
+		0EC7A7032FCC100100E0D195 /* StreamChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */;
+			productName = StreamChat;
+		};
+		0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EC7A7022FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swiftui" */;
+			productName = StreamChatSwiftUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

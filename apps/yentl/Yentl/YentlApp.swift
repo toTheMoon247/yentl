@@ -12,6 +12,7 @@ struct YentlApp: App {
     @State private var profiles = ProfileService.shared
     @State private var discovery = DiscoveryService.shared
     @State private var matches = MatchService.shared
+    @State private var chat = ChatService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +21,7 @@ struct YentlApp: App {
                 .environment(profiles)
                 .environment(discovery)
                 .environment(matches)
+                .environment(chat)
         }
     }
 }

@@ -110,6 +110,7 @@ private struct MatchDetailView: View {
     @State private var prompts: [ProfilePrompt] = []
     @State private var isResponding = false
     @State private var errorMessage: String?
+    @State private var showingChat = false
 
     private var canRespond: Bool {
         match.state == .pending && !match.hasResponded
@@ -137,6 +138,11 @@ private struct MatchDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("Close") { dismiss() } }
             }
+            .navigationDestination(isPresented: $showingChat) {
+                MatchConversationView(match: match)
+                    .navigationTitle(match.otherDisplayName)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
         }
         .task { await loadMedia() }
     }
@@ -152,7 +158,19 @@ private struct MatchDetailView: View {
                       "clock", DesignTokens.Palette.primary)
             }
         case .confirmed:
-            label("It's a match! 🎉", "checkmark.seal.fill", .green)
+            // A confirmed match is the entry point to chat (Phase 7).
+            VStack(spacing: DesignTokens.Spacing.md) {
+                label("It's a match! 🎉", "checkmark.seal.fill", .green)
+                Button {
+                    showingChat = true
+                } label: {
+                    Label("Open chat", systemImage: "bubble.left.and.bubble.right.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.pink)
+                .controlSize(.large)
+            }
         case .rejected:
             // Deliberately does not say who declined: the user learns the
             // match is over without being told they were the one rejected.

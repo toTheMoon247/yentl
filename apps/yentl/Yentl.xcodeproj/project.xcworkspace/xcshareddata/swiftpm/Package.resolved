@@ -1,6 +1,33 @@
 {
-  "originHash" : "88c430be05c20a2680470c5cb8d0914eb035b8f22750da01eb9922f1b3570eee",
+  "originHash" : "824877db00d6f5bd52dc96bf8053f436aa4a972f697ea17006de7a8d0ed16404",
   "pins" : [
+    {
+      "identity" : "stream-chat-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GetStream/stream-chat-swift",
+      "state" : {
+        "revision" : "ff8e9a4db3fb3fd3dca2d0ee3323132d03bdf0d7",
+        "version" : "5.6.0"
+      }
+    },
+    {
+      "identity" : "stream-chat-swiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GetStream/stream-chat-swiftui",
+      "state" : {
+        "revision" : "9af56c44a555e153980c90f2d00848603b13ba80",
+        "version" : "5.6.0"
+      }
+    },
+    {
+      "identity" : "stream-core-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GetStream/stream-core-swift.git",
+      "state" : {
+        "revision" : "27555e34ec186b97688df74cc3f04cc1bdefeff7",
+        "version" : "0.9.0"
+      }
+    },
     {
       "identity" : "supabase-swift",
       "kind" : "remoteSourceControl",

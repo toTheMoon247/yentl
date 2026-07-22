@@ -20,22 +20,37 @@ private enum AccountStage {
 struct ContentView: View {
     @Environment(AuthService.self) private var auth
     @Environment(ProfileService.self) private var profiles
+    @Environment(ChatService.self) private var chat
     @State private var stage: AccountStage?
     @State private var statusError: String?
 
     var body: some View {
-        switch auth.state {
-        case .loading:
-            ProgressView()
-        case .signedOut:
-            YentlAuthFlow(config: .yentl)
-                .onAppear { stage = nil; statusError = nil }
-                #if DEBUG
-                .modifier(SignedOutTestLoginButton())
-                #endif
-        case .signedIn:
-            signedInContent
-                .task(id: signedInUserID) { await loadStage() }
+        Group {
+            switch auth.state {
+            case .loading:
+                ProgressView()
+            case .signedOut:
+                YentlAuthFlow(config: .yentl)
+                    .onAppear { stage = nil; statusError = nil }
+                    #if DEBUG
+                    .modifier(SignedOutTestLoginButton())
+                    #endif
+            case .signedIn:
+                signedInContent
+                    .task(id: signedInUserID) { await loadStage() }
+            }
+        }
+        // The Stream connection follows the Supabase session: connect on
+        // sign-in (or account switch), disconnect on sign-out. Lowercased id:
+        // Stream user ids are the lowercase Supabase UUIDs (the exact string
+        // the stream-token function mints tokens for).
+        .task(id: auth.currentUserIDString) {
+            if let id = auth.currentUserIDString {
+                let name = (try? await profiles.fetchMyProfile())?.displayName
+                await chat.connect(userID: id.lowercased(), displayName: name)
+            } else if case .signedOut = auth.state {
+                await chat.disconnect()
+            }
         }
     }
 
@@ -116,6 +131,8 @@ private struct SignedInHomeView: View {
                 .tabItem { Label("Discover", systemImage: "sparkles") }
             MatchesView()
                 .tabItem { Label("Matches", systemImage: "heart") }
+            ChatInboxView()
+                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
             ProfileTab()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }
@@ -211,4 +228,5 @@ private struct SignedOutTestLoginButton: ViewModifier {
         .environment(ProfileService.shared)
         .environment(DiscoveryService.shared)
         .environment(MatchService.shared)
+        .environment(ChatService.shared)
 }

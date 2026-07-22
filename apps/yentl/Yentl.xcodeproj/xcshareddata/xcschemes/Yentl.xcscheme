@@ -38,6 +38,16 @@
                ReferencedContainer = "container:Yentl.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0E3168EE2FCB3BCD00E0D195"
+               BuildableName = "YentlUITests.xctest"
+               BlueprintName = "YentlUITests"
+               ReferencedContainer = "container:Yentl.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
