@@ -328,14 +328,37 @@ reads it.
 - [ ] RevenueCat project/app for `com.yentl.app`; consumable product/offering
       configured; linked to App Store Connect (IAP product + ASC API key)
 - [ ] RevenueCat SDK in the consumer app; app-user-id = Supabase user id
-- [ ] `payments` table + `is_match_paid()` helper; payment history per user
+- [x] `payments` table + `is_match_paid()` helper + `payment_history_for_user()`
+      — migration `20260722110000_payments.sql`, **applied to live** 2026-07-22
 - [ ] Purchase flow (buy the date fee via RevenueCat)
-- [ ] `record-payment` Edge Function (re-verifies via RevenueCat REST API)
-- [ ] RevenueCat webhook Edge Function → refunds/chargebacks update the ledger
+- [x] `record-payment` Edge Function (re-verifies via RevenueCat REST v2) — built,
+      **not yet deployed** (needs the RevenueCat secrets)
+- [x] RevenueCat webhook Edge Function → refunds update the ledger — built, **not
+      yet deployed**
 - [ ] "Pay to unlock chat" gate on the confirmed match (chat opens when both paid)
 - [ ] **Deferred:** the one-pays-other-ghosts refund/timeout policy, and
       anti-gaming (repeat confirm-then-ghost) — data model tracks per-user
       payment status so both are handleable later
+
+> **HANDOFF STATE (2026-07-22, mid-session restart).** Backend is done and
+> committed (`b872925`); the migration is live. Next steps, in order:
+> 1. The **RevenueCat MCP** is registered for this repo (`revenuecat` →
+>    `https://mcp.revenuecat.ai/mcp`) but loads only on session start — after a
+>    restart, authenticate it via `/mcp` (OAuth to the RevenueCat account).
+> 2. Get the RevenueCat **public SDK key** (`appl_…`), a **secret key** (`sk_…`),
+>    and the **project id** — via the MCP if it exposes them, else the dashboard.
+> 3. Set Supabase secrets: `REVENUECAT_SECRET_KEY`, `REVENUECAT_PROJECT_ID`,
+>    `REVENUECAT_WEBHOOK_AUTH` (a chosen shared secret). Then **deploy**
+>    `record-payment` and `revenuecat-webhook` (`--no-verify-jwt`).
+> 4. App-side slice: add the RevenueCat SDK to the consumer app, set its
+>    app-user-id to the Supabase user id (mirror OneSignal/Stream), buy the fee,
+>    call `record-payment`.
+> 5. Chat gate: block the conversation until `is_match_paid(match)` is true.
+> 6. **App Store Connect** (user, Apple-side, at real-purchase test): create the
+>    `com.yentl.app.date_fee` consumable, link it to RevenueCat, configure the
+>    Offering + the webhook (URL + Authorization header = `REVENUECAT_WEBHOOK_AUTH`).
+> RevenueCat REST v2 / webhook specifics are in the "RevenueCat API notes" block
+> the backend agent added above.
 
 **RevenueCat API notes (verified against the current docs 2026-07-22, while
 building the backend slice):**
