@@ -8,13 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		0E3169712FCB979800E0D195 /* YentlShared in Frameworks */ = {isa = PBXBuildFile; productRef = 0E3169702FCB979800E0D195 /* YentlShared */; };
-		0EC7A7052FCC100100E0D195 /* StreamChat in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7032FCC100100E0D195 /* StreamChat */; };
-		0EC7A7062FCC100100E0D195 /* StreamChatSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */; };
 		0EA051232FDA000100E0D195 /* OneSignalFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA051202FDA000100E0D195 /* OneSignalFramework */; };
 		0EA051242FDA000100E0D195 /* OneSignalInAppMessages in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA051212FDA000100E0D195 /* OneSignalInAppMessages */; };
 		0EA051252FDA000100E0D195 /* OneSignalLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA051222FDA000100E0D195 /* OneSignalLocation */; };
 		0EA0513B2FDA000200E0D195 /* OneSignalExtension in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA051372FDA000200E0D195 /* OneSignalExtension */; };
 		0EA0513D2FDA000200E0D195 /* OneSignalNotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0EA051302FDA000200E0D195 /* OneSignalNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0EC7A7052FCC100100E0D195 /* StreamChat in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7032FCC100100E0D195 /* StreamChat */; };
+		0EC7A7062FCC100100E0D195 /* StreamChatSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +41,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		0EA0513C2FDA000200E0D195 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0EA0513D2FDA000200E0D195 /* OneSignalNotificationServiceExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0E3168D82FCB3BCB00E0D195 /* Yentl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yentl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E3168E52FCB3BCD00E0D195 /* YentlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YentlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -53,7 +67,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Yentl.entitlements,
 			);
 			target = 0E3168D72FCB3BCB00E0D195 /* Yentl */;
 		};
@@ -61,7 +74,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				OneSignalNotificationServiceExtension.entitlements,
 			);
 			target = 0EA051332FDA000200E0D195 /* OneSignalNotificationServiceExtension */;
 		};
@@ -133,20 +145,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		0EA0513C2FDA000200E0D195 /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				0EA0513D2FDA000200E0D195 /* OneSignalNotificationServiceExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXGroup section */
 		0E3168CF2FCB3BCB00E0D195 = {
@@ -530,9 +528,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Yentl/Yentl.entitlements;
-				CODE_SIGN_ENTITLEMENTS = Yentl/Yentl.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 867ZCC5J4J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Yentl/Info.plist;
@@ -565,9 +563,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Yentl/Yentl.entitlements;
-				CODE_SIGN_ENTITLEMENTS = Yentl/Yentl.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 867ZCC5J4J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Yentl/Info.plist;
@@ -680,6 +678,7 @@
 				CODE_SIGN_ENTITLEMENTS = OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 867ZCC5J4J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OneSignalNotificationServiceExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OneSignalNotificationServiceExtension;
@@ -706,6 +705,7 @@
 				CODE_SIGN_ENTITLEMENTS = OneSignalNotificationServiceExtension/OneSignalNotificationServiceExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 867ZCC5J4J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OneSignalNotificationServiceExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OneSignalNotificationServiceExtension;
@@ -784,6 +784,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0EA0511F2FDA000100E0D195 /* XCRemoteSwiftPackageReference "OneSignal-XCFramework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/OneSignal/OneSignal-XCFramework";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.2.0;
+			};
+		};
 		0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/GetStream/stream-chat-swift";
@@ -800,30 +808,12 @@
 				minimumVersion = 5.6.0;
 			};
 		};
-		0EA0511F2FDA000100E0D195 /* XCRemoteSwiftPackageReference "OneSignal-XCFramework" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/OneSignal/OneSignal-XCFramework";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.2.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		0E3169702FCB979800E0D195 /* YentlShared */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = YentlShared;
-		};
-		0EC7A7032FCC100100E0D195 /* StreamChat */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */;
-			productName = StreamChat;
-		};
-		0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0EC7A7022FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swiftui" */;
-			productName = StreamChatSwiftUI;
 		};
 		0EA051202FDA000100E0D195 /* OneSignalFramework */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -844,6 +834,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0EA0511F2FDA000100E0D195 /* XCRemoteSwiftPackageReference "OneSignal-XCFramework" */;
 			productName = OneSignalExtension;
+		};
+		0EC7A7032FCC100100E0D195 /* StreamChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */;
+			productName = StreamChat;
+		};
+		0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EC7A7022FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swiftui" */;
+			productName = StreamChatSwiftUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
