@@ -153,7 +153,11 @@ private struct PayToUnlockChatView: View {
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
         } else {
-            Text("You and \(match.otherDisplayName) are matched! To open your chat, each of you confirms the date with a one-time fee\(price.map { " of \($0)" } ?? ""). Yentl only charges when a real date is on.")
+            Text("""
+                You and \(match.otherDisplayName) are matched! To open your chat, each of you \
+                confirms the date with a one-time fee\(price.map { " of \($0)" } ?? ""). \
+                Yentl only charges when a real date is on.
+                """)
                 .font(DesignTokens.Typography.body)
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
