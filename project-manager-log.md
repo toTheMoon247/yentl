@@ -425,3 +425,44 @@ Before tagging, the last loose end was closed: the new "not accepted by both" wo
 - **Then Phase 7 (chat), which needs credentials that only you can create** — a Stream Chat account. Worth knowing this is the point where the build stops being able to run unattended.
 - **Enrol in the Apple Developer Program now if you haven't.** Phase 8 (notifications) cannot start without it and approval takes real-world days. It is the longest lead time on the project and nothing technical can shorten it.
 - Still tracked: the clearer countdown clock on the *consumer* side.
+
+---
+
+## Day 13 — 2026-07-22
+
+A long, productive session that took the project from "matches" all the way through **chat** and a working **notifications** system — including the first time real push notifications landed on an actual phone.
+
+**Milestone: Chat is done — `v0.7.0`.** Two people who've matched can now message each other in real time. We built this on **Stream** (a specialist chat service) rather than from scratch, which gives us reliable messaging, typing indicators, and read receipts for free. Decisions and safeguards worth recording:
+
+- **All the security-sensitive parts happen on our server, never in the app.** The app can't mint its own chat credentials or impersonate another user — every chat token is issued by our backend and tied to the verified signed-in user. We tested this against the live system: a stranger cannot open someone else's conversation.
+- **A chat channel is created automatically the moment two people confirm a match** — properly, on the server, so both people are added even if one hasn't opened the app yet.
+- **Conversations tidy themselves up.** After 48 hours of silence a chat quietly moves to an "Archived" section; sending a new message brings it right back. Nothing is ever deleted — a slow replier isn't punished.
+- **Block and report.** Blocking ends the match, hides the chat for both people, and quietly flags it for the matchmakers (the full moderation desk comes later, in Phase 11). Reporting offers a short list of reasons plus an optional note. As with rejections, the app never tells someone they were the one blocked.
+
+**Decision: payments will use Apple's in-app purchase.** The open question of whether Apple would allow a real-world "per-date fee" was resolved as a working assumption — we'll build for Apple's in-app purchase system. Flagged honestly: this isn't yet confirmed in writing with Apple, and if a reviewer later disagrees, the payment piece would need rework. It no longer blocks planning.
+
+**Milestone: Notifications — and real pushes on a real phone.** This was the headline of the day. We wired up two notification systems that now work side by side on one device:
+
+- **Match notifications** (via OneSignal): when a matchmaker creates a match, both people get "You have a new match!"; when both accept, "It's a match!"
+- **Chat notifications** (via Stream): a new message pings the other person's phone.
+
+*Why two systems:* the chat service already knows who's online and what's unread, so letting it handle message pings is less work and more accurate; OneSignal handles the match-lifecycle pings. They share one connection to Apple's notification service without conflicting.
+
+**We tested it end-to-end on a physical iPhone — and it works.** Both match banners and a chat-message banner all arrived. Getting there surfaced two real problems that *only* show up on a real device, which is exactly why the on-device test matters:
+
+- The app needed a signing setup with the Apple account before it could be installed on a phone (a one-time configuration step done in Xcode).
+- The chat service's push notifications were switched **off by default** for new messages, and the setting needed an explicit "Save" — until we caught that, the phone stayed silent even though everything else was correct.
+
+**Assumptions and honest gaps.**
+
+- **The chat secret and notification keys live only on the server**, never in the app or the public code — consistent with how we've handled every credential.
+- Still deliberately not built (noted for later): reminder pushes when a match is about to expire (needs a scheduler), and a stronger anti-impersonation lock on notifications (needs a little more server work before it's switched on). Neither blocks anything today.
+- The user chose to also enable chat pushes for message edits and reactions; worth revisiting if it feels noisy in real use.
+
+**Where the project stands.** Nine of the fourteen phases are effectively complete. The core product — profiles, discovery, matchmaker decisions, matches, chat, and notifications — is built and, in most cases, proven on real devices against the live system. What remains is more about polish, payments, safety/moderation depth, and launch preparation than core mechanics.
+
+**Steps for next.**
+
+- Finish the smaller remaining notification pieces (expiry reminders, the in-app notification list and per-type settings screen) when convenient.
+- Begin **Phase 9 (payments)** — building the per-date fee on Apple's in-app purchase, and ideally confirming Apple's stance in writing first.
+- Still tracked: the clearer countdown clock on the consumer side, and turning on the notification anti-impersonation lock.
