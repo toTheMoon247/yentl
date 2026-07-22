@@ -114,6 +114,7 @@ struct MatchStateBadge: View {
         case .confirmed: return "CONFIRMED"
         case .rejected: return "REJECTED"
         case .expired: return "EXPIRED"
+        case .blocked: return "BLOCKED"
         }
     }
 
@@ -123,6 +124,8 @@ struct MatchStateBadge: View {
         case .confirmed: return .green
         case .rejected: return .gray
         case .expired: return .gray
+        // Red on purpose: a block is a safety signal, not a routine outcome.
+        case .blocked: return .red
         }
     }
 }

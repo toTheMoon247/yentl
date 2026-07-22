@@ -78,6 +78,13 @@ public final class StreamChannelService {
     public func reset() {
         ensured.removeAll()
     }
+
+    // Phase 11: on block, freeze or delete the match's Stream channel
+    // server-side (the stream-channel Edge Function holds the secret; the
+    // client must never). Phase 7 only hides the channel app-side: a blocked
+    // match leaves my_matches(), so neither the inbox (confirmed-only filter)
+    // nor the match list can reach the conversation, but the channel itself
+    // still exists in Stream until the moderation slice cleans it up.
 }
 
 extension StreamChannelResponse {

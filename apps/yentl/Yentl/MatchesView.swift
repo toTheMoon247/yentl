@@ -88,7 +88,11 @@ struct MatchesView: View {
         errorMessage = nil
         defer { isLoading = false }
         do {
+            // The server already excludes blocked matches from my_matches();
+            // the filter is a belt-and-braces guard so a blocked match can
+            // never render even if that changes.
             matches = try await matchService.myMatches()
+                .filter { $0.state != .blocked }
             // Slice 3: the moment a confirmed match is observed, make sure its
             // Stream channel exists (server-side, idempotent). Fire-and-forget:
             // opening the chat ensures again, so a miss here only delays the
@@ -120,6 +124,7 @@ private struct MatchDetailView: View {
     @State private var isResponding = false
     @State private var errorMessage: String?
     @State private var showingChat = false
+    @State private var safetySheet: BlockReportMode?
 
     private var canRespond: Bool {
         match.state == .pending && !match.hasResponded
@@ -145,12 +150,25 @@ private struct MatchDetailView: View {
             .navigationTitle(match.otherDisplayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    SafetyMenu(
+                        onReport: { safetySheet = .report },
+                        onBlock: { safetySheet = .block }
+                    )
+                }
                 ToolbarItem(placement: .topBarTrailing) { Button("Close") { dismiss() } }
             }
             .navigationDestination(isPresented: $showingChat) {
-                MatchConversationView(match: match)
+                // Blocking from inside the chat resolves the whole match:
+                // close this detail sheet and refresh the list.
+                MatchConversationView(match: match, onBlocked: onResolved)
                     .navigationTitle(match.otherDisplayName)
                     .navigationBarTitleDisplayMode(.inline)
+            }
+            .sheet(item: $safetySheet) { mode in
+                BlockReportSheet(mode: mode, match: match) { endedMatch in
+                    if endedMatch { onResolved() }
+                }
             }
         }
         .task { await loadMedia() }
@@ -187,6 +205,10 @@ private struct MatchDetailView: View {
                   "xmark.circle", .secondary)
         case .expired:
             label("This match expired.", "clock.badge.xmark", .secondary)
+        case .blocked:
+            // Normally unreachable: blocked matches are excluded from the
+            // list. Kept neutral in case one is ever rendered mid-refresh.
+            label("This match has ended.", "hand.raised", .secondary)
         }
     }
 
@@ -258,6 +280,7 @@ private enum MatchStatus {
         case .confirmed: return "It's a match!"
         case .rejected: return "Not accepted by both"
         case .expired: return "Expired"
+        case .blocked: return "Ended"
         }
     }
 

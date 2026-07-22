@@ -69,6 +69,51 @@ public final class MatchService {
         }
     }
 
+    /// Blocks the other participant of a match: the match moves to the
+    /// terminal `blocked` state for BOTH people (each side's next refresh no
+    /// longer contains it), a block row is recorded for matchmakers, and an
+    /// optional report is filed in the same gesture. Safe to call twice.
+    public func blockMatch(
+        matchID: UUID, reason: ReportReason? = nil, note: String? = nil
+    ) async throws {
+        do {
+            try await Backend.supabase
+                .rpc("block_match", params: BlockParams(
+                    match: matchID, reason: reason?.rawValue, note: Self.normalized(note)
+                ))
+                .execute()
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchError.unexpected(error)
+        }
+    }
+
+    /// Files a report about a user, optionally tied to a match the caller is
+    /// part of. The server enforces the canned-reason list and participant
+    /// checks. Blocking is separate — see `blockMatch`.
+    public func reportUser(
+        userID: UUID, reason: ReportReason, matchID: UUID? = nil, note: String? = nil
+    ) async throws {
+        do {
+            try await Backend.supabase
+                .rpc("report_user", params: ReportParams(
+                    reported: userID, reason: reason.rawValue,
+                    match: matchID, note: Self.normalized(note)
+                ))
+                .execute()
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchError.unexpected(error)
+        }
+    }
+
+    /// Trims a free-text note; empty becomes nil so the RPC's default (null)
+    /// applies instead of storing an empty string.
+    nonisolated static func normalized(_ note: String?) -> String? {
+        let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (trimmed?.isEmpty ?? true) ? nil : trimmed
+    }
+
     struct CreateParams: Encodable {
         let userOne: UUID
         let userTwo: UUID
@@ -83,5 +128,21 @@ public final class MatchService {
     private struct RespondParams: Encodable {
         let match: UUID
         let accept: Bool
+    }
+
+    // Internal (not private) so the key-drift unit tests can see them, like
+    // CreateParams. Optionals rely on synthesized encodeIfPresent: a nil key
+    // is omitted entirely, so the RPC's SQL default (null) applies.
+    struct BlockParams: Encodable {
+        let match: UUID
+        let reason: String?
+        let note: String?
+    }
+
+    struct ReportParams: Encodable {
+        let reported: UUID
+        let reason: String
+        let match: UUID?
+        let note: String?
     }
 }

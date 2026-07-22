@@ -59,12 +59,24 @@ struct ChatInboxView: View {
 
 /// The user's messaging channels in two sections: Active, and a collapsed
 /// Archived section for chats 48h+ quiet.
+///
+/// Phase 7 (block/report): the list is cross-checked against my_matches() and
+/// shows only channels belonging to a CONFIRMED match. A blocked match leaves
+/// my_matches() on both sides, so its channel disappears from each person's
+/// inbox on their next visit — the app-side half of "blocking hides the chat".
+/// (Server-side Stream channel freeze/delete is deferred; see the Phase 11
+/// note in YentlShared/StreamChannelService.)
 private struct InboxChannelList: View {
     @Injected(\.utils) private var utils
 
     private let client: ChatClient
     @StateObject private var model: InboxChannelsModel
     @State private var showArchived = false
+
+    @Environment(MatchService.self) private var matchService
+    /// Confirmed matches keyed by their Stream channel id
+    /// (`match-<uuid, lowercased>`). Nil until the first load finishes.
+    @State private var confirmedByChannelID: [String: MatchSummary]?
 
     init(userID: String, client: ChatClient) {
         self.client = client
@@ -76,12 +88,15 @@ private struct InboxChannelList: View {
             // Re-evaluates the 48h split once a minute, so a chat crossing
             // the threshold moves sections without a reload.
             TimelineView(.periodic(from: .now, by: 60)) { context in
-                let all = model.channels
+                let all = model.channels.filter { match(for: $0) != nil }
                 let archived = all.filter { isArchived($0, now: context.date) }
                 let active = all.filter { !isArchived($0, now: context.date) }
 
                 Group {
-                    if all.isEmpty {
+                    if confirmedByChannelID == nil {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if all.isEmpty {
                         emptyState
                     } else {
                         List {
@@ -116,6 +131,30 @@ private struct InboxChannelList: View {
             .navigationTitle("Messages")
         }
         .onAppear { model.start() }
+        .task { await loadMatches() }
+    }
+
+    /// The confirmed match backing a channel, or nil if the channel should be
+    /// hidden (blocked / no longer confirmed / unknown id).
+    private func match(for channel: ChatChannel) -> MatchSummary? {
+        confirmedByChannelID?[channel.cid.id]
+    }
+
+    private func loadMatches() async {
+        do {
+            let matches = try await matchService.myMatches()
+            confirmedByChannelID = Dictionary(
+                uniqueKeysWithValues: matches
+                    .filter { $0.state == .confirmed }
+                    .map { ("match-\($0.matchID.uuidString.lowercased())", $0) }
+            )
+        } catch is CancellationError {
+        } catch {
+            // Without the match list we can't know which channels are safe to
+            // show; treat a hard failure as "none" rather than risk surfacing
+            // a blocked chat. (Transient — reloads on next tab visit.)
+            if confirmedByChannelID == nil { confirmedByChannelID = [:] }
+        }
     }
 
     private func isArchived(_ channel: ChatChannel, now: Date) -> Bool {
@@ -126,11 +165,23 @@ private struct InboxChannelList: View {
         )
     }
 
+    @ViewBuilder
     private func row(_ channel: ChatChannel) -> some View {
         NavigationLink {
-            ChatChannelView(channelController: client.channelController(for: channel.cid))
+            // Through MatchConversationView (not raw ChatChannelView) so the
+            // block/report menu is available from the inbox too. The rows are
+            // pre-filtered to confirmed matches, so the summary exists.
+            if let summary = match(for: channel) {
+                MatchConversationView(match: summary, onBlocked: {
+                    Task { await loadMatches() }
+                })
                 .navigationTitle(name(of: channel))
                 .navigationBarTitleDisplayMode(.inline)
+            } else {
+                ChatChannelView(channelController: client.channelController(for: channel.cid))
+                    .navigationTitle(name(of: channel))
+                    .navigationBarTitleDisplayMode(.inline)
+            }
         } label: {
             HStack(spacing: DesignTokens.Spacing.md) {
                 VStack(alignment: .leading, spacing: 2) {

@@ -6,6 +6,32 @@ public enum MatchState: String, Codable, Sendable {
     case confirmed
     case rejected
     case expired
+    /// A participant blocked the other person. Terminal; hidden from both
+    /// sides' match lists (my_matches excludes it server-side).
+    case blocked
+}
+
+/// Canned reasons for reporting a user. Raw values mirror the
+/// `reports.reason` check constraint — changing one requires a migration.
+public enum ReportReason: String, CaseIterable, Codable, Sendable, Identifiable {
+    case harassment
+    case inappropriatePhotos = "inappropriate_photos"
+    case spamScam = "spam_scam"
+    case offPlatformContact = "off_platform_contact"
+    case other
+
+    public var id: String { rawValue }
+
+    /// Human-readable label for pickers.
+    public var label: String {
+        switch self {
+        case .harassment: return "Harassment or bullying"
+        case .inappropriatePhotos: return "Inappropriate photos"
+        case .spamScam: return "Spam or scam"
+        case .offPlatformContact: return "Pushing to leave Yentl"
+        case .other: return "Something else"
+        }
+    }
 }
 
 /// A match from the current user's perspective, joined to the other person's

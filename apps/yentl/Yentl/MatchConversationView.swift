@@ -16,10 +16,15 @@ import YentlShared
 
 struct MatchConversationView: View {
     let match: MatchSummary
+    /// Called after the current user blocks from inside this chat — the
+    /// conversation pops itself first; the presenter should refresh its list.
+    var onBlocked: () -> Void = {}
 
     @Environment(ChatService.self) private var chat
+    @Environment(\.dismiss) private var dismiss
     @State private var controller: ChatChannelController?
     @State private var errorMessage: String?
+    @State private var safetySheet: BlockReportMode?
 
     var body: some View {
         Group {
@@ -65,6 +70,25 @@ struct MatchConversationView: View {
                         guard case .connected = chat.connectionState else { return }
                         await openChannel()
                     }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                SafetyMenu(
+                    onReport: { safetySheet = .report },
+                    onBlock: { safetySheet = .block }
+                )
+            }
+        }
+        .sheet(item: $safetySheet) { mode in
+            BlockReportSheet(mode: mode, match: match) { endedMatch in
+                if endedMatch {
+                    // The match is now blocked server-side; leave the dead
+                    // conversation and let the presenter refresh, which drops
+                    // the match (and this channel) from view.
+                    dismiss()
+                    onBlocked()
+                }
             }
         }
     }
