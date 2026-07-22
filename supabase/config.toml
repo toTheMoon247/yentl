@@ -423,6 +423,14 @@ enabled = true
 # functions/revenuecat-webhook/index.ts.
 verify_jwt = false
 
+[functions.screen-profile]
+enabled = true
+# Same reasoning as stream-token: the function authenticates callers itself —
+# owner/staff JWTs via auth.getUser(), or the service-role key verbatim for
+# server-side automation — which is stricter than the gateway check. See
+# functions/screen-profile/index.ts.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

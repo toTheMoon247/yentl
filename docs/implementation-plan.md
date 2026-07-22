@@ -420,12 +420,36 @@ Exit: ready to submit both apps to the App Store with safety, legal, and observa
 
 Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a hard gate before any outside-user beta and before App Store submission — Apple reviewers check UGC moderation, and you need at least photo AI screening live before any untrusted user uploads content.
 
-### Backend
-- [ ] AI screening edge function: photos through moderation API (NSFW, faces present, single person)
-- [ ] AI screening edge function: text through moderation (slurs, profanity, contact info)
-- [ ] AI verdict storage with reasons
-- [ ] Approval transition logic with audit trail (who, when, why)
-- [ ] Flip `profile_approval_enabled` flag to `true`
+**Decisions (2026-07-22):**
+- [x] **AI-clean → auto-approve; matchmakers review only FLAGGED profiles**, not
+      every profile. Clean profiles go live with no human in the loop.
+- [x] **Moderation via OpenAI** (one vendor, one key): text through the
+      moderations endpoint (`omni-moderation-latest`), photos through the same
+      endpoint's image input (NSFW), plus a **GPT-4o vision** check for "is this
+      one real person's face?" (faces present, single person, not a
+      group/object/screenshot). The photo path sits behind a small pluggable
+      `PhotoScreener` interface in `screen-profile` so a dedicated vision vendor
+      (Sightengine/Hive) could replace OpenAI later.
+- [x] **Contact info in text** (phone/email/handles/"find me on…") is flagged by
+      a lightweight regex/heuristic detector in `screen-profile` — OpenAI's
+      moderation categories don't cover moving off-platform.
+- [x] **The flag stays OFF until the review UI exists.** `profile_approval_enabled`
+      lives in the new `app_config` table (authenticated read, admin/service
+      write), default `false`. While OFF the pipeline changes nothing: completed
+      profiles go live exactly as before. An AI `error` verdict never blocks or
+      approves — the state stays put and screening can be retried.
+- [x] **Nobody reaches `live` by writing the table** while approval is ON: a
+      trigger coerces direct `live` writes (including the app's current
+      completion update) to `pending_ai`, so the existing client keeps working
+      under both flag values and self-approval is impossible.
+
+### Backend — **Slice 1 built + locally verified 2026-07-22 (not yet applied/deployed)**
+- [x] AI screening edge function: photos through moderation API (NSFW, faces present, single person) — `screen-profile`, verified against a mock OpenAI locally
+- [x] AI screening edge function: text through moderation (slurs, profanity, contact info) — same function; contact info via local detector
+- [x] AI verdict storage with reasons — `profile_moderation` (latest verdict per profile, owner-readable for the later "why rejected" screen)
+- [x] Approval transition logic with audit trail (who, when, why) — `apply_ai_verdict` (service-role only) + `matchmaker_approve_profile` / `matchmaker_reject_profile` (staff, reject requires a reason) + append-only `profile_review_audit` (staff-only)
+- [ ] Verify screening against the REAL OpenAI API (all local tests ran against a mock; needs `OPENAI_API_KEY` set as a function secret)
+- [ ] Flip `profile_approval_enabled` flag to `true` — **last step, after the matchmaker queue UI + consumer states exist**
 
 ### Yentl Matchmaker
 - [ ] Approval queue list view (sorted by submission time)
