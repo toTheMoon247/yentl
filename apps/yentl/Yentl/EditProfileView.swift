@@ -14,6 +14,10 @@ import YentlShared
 struct EditProfileView: View {
     /// Called when editing finishes (saved) or is cancelled.
     let onDone: () -> Void
+    /// Called only on a successful save, just before `onDone` — lets the
+    /// rejected-profile screen resubmit after edits while a plain cancel
+    /// changes nothing. Optional so existing call sites are unaffected.
+    var onSaved: (() -> Void)?
 
     @Environment(ProfileService.self) private var profiles
 
@@ -198,6 +202,7 @@ struct EditProfileView: View {
                 prompts: prompts
             )
             try await profiles.savePrivateDetails(heightCm: heightCm, incomeAnnual: income)
+            onSaved?()
             onDone()
         } catch {
             errorMessage = error.localizedDescription

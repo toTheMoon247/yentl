@@ -142,7 +142,11 @@ public final class ProfileService {
         }
     }
 
-    /// Stamps `profile_completed_at`, marking the profile live (MVP).
+    /// Stamps `profile_completed_at` and submits the profile: the write of
+    /// `review_state = 'live'` takes effect directly while approval is OFF
+    /// (today's behavior), and is coerced to `pending_ai` by the server's
+    /// `enforce_review_state` trigger while approval is ON. Also the
+    /// "resubmit" call after a rejection — same write, same coercion.
     public func markProfileComplete() async throws {
         let userID = try await currentUserID()
         do {
@@ -154,6 +158,74 @@ public final class ProfileService {
         } catch {
             if error is CancellationError { throw error }
             throw ProfileError.unexpected(error)
+        }
+    }
+
+    // MARK: - Review state (Phase 12)
+
+    /// The signed-in user's `profiles.review_state`, or nil when no profile
+    /// row exists yet (or the server holds a value this build doesn't know —
+    /// treated like "no gate", so an app update can't lock users out).
+    public func fetchMyReviewState() async throws -> ProfileReviewState? {
+        let userID = try await currentUserID()
+        do {
+            let rows: [ReviewStateRow] = try await Backend.supabase
+                .from("profiles")
+                .select("review_state")
+                .eq("id", value: userID)
+                .limit(1)
+                .execute()
+                .value
+            return rows.first.flatMap { ProfileReviewState(rawValue: $0.reviewState) }
+        } catch {
+            if error is CancellationError { throw error }
+            throw ProfileError.unexpected(error)
+        }
+    }
+
+    /// The signed-in user's own `profile_moderation` row (RLS allows owner
+    /// reads), or nil when no screening/decision has ever been recorded.
+    /// Carries `decisionReason` for the "profile needs changes" screen.
+    public func fetchMyModeration() async throws -> MyModerationStatus? {
+        let userID = try await currentUserID()
+        do {
+            let rows: [MyModerationStatus] = try await Backend.supabase
+                .from("profile_moderation")
+                .select("decision, decision_reason")
+                .eq("profile_id", value: userID)
+                .limit(1)
+                .execute()
+                .value
+            return rows.first
+        } catch {
+            if error is CancellationError { throw error }
+            throw ProfileError.unexpected(error)
+        }
+    }
+
+    /// Best-effort request for AI screening of the signed-in user's profile
+    /// (the `screen-profile` Edge Function, invoked with the owner's JWT).
+    ///
+    /// Deliberately non-throwing: screening failing (function not deployed
+    /// yet, OPENAI_API_KEY unset, network down) must never strand the user —
+    /// the caller re-reads `review_state` afterwards and routes on whatever
+    /// the server actually holds. With approval OFF the call is harmless
+    /// either way: completion already wrote `live`.
+    @discardableResult
+    public func requestScreening() async -> Bool {
+        do {
+            let userID = try await currentUserID()
+            try await Backend.supabase.functions.invoke(
+                "screen-profile",
+                options: FunctionInvokeOptions(
+                    method: .post,
+                    body: ScreenProfileRequest(profileID: userID)
+                )
+            )
+            return true
+        } catch {
+            // Swallowed by design — see above. The state re-read is the truth.
+            return false
         }
     }
 
@@ -336,6 +408,31 @@ public final class ProfileService {
         }
     }
 
+    /// Decoded as a raw string (not `ProfileReviewState`) so an unknown
+    /// future state degrades to nil instead of a decoding error.
+    private struct ReviewStateRow: Decodable {
+        let reviewState: String
+
+        enum CodingKeys: String, CodingKey {
+            case reviewState = "review_state"
+        }
+    }
+
+    /// Body of the `screen-profile` invocation. The function validates the
+    /// id against a lowercase-only UUID regex, so the uppercase
+    /// `UUID.uuidString` must be lowercased here.
+    struct ScreenProfileRequest: Encodable {
+        let profileID: String
+
+        init(profileID: UUID) {
+            self.profileID = profileID.uuidString.lowercased()
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case profileID = "profile_id"
+        }
+    }
+
     private struct BasicsPayload: Encodable {
         let id: UUID
         let displayName: String
@@ -354,8 +451,9 @@ public final class ProfileService {
 
     private struct CompletionPayload: Encodable {
         let profileCompletedAt: Date
-        // MVP mock: profiles go live immediately on completion. The real
-        // approval pipeline (Phase 12) will gate this instead.
+        // Writing 'live' is the submission protocol (see markProfileComplete):
+        // it sticks while approval is OFF; the enforce_review_state trigger
+        // turns it into 'pending_ai' while approval is ON.
         let reviewState = "live"
 
         enum CodingKeys: String, CodingKey {

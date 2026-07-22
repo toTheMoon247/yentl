@@ -471,9 +471,26 @@ Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a h
       sent as `token` / `token: note` so the consumer rejected screen (Slice 3)
       can prefix-match the token
 
-### Yentl
-- [ ] "Profile under review" state UI
-- [ ] "Profile rejected" state UI with reason and edit-and-resubmit flow
+### Yentl — **Slice 3 built + locally verified 2026-07-23**
+- [x] "Profile under review" state UI — `ProfileUnderReviewView`; ContentView
+      routes a completed profile on `review_state` (`pending_ai` /
+      `pending_review` → holding screen with a Check-status refresh; `live` →
+      the normal app, so the flag-OFF path is byte-for-byte today's behavior)
+- [x] "Profile rejected" state UI with reason and edit-and-resubmit flow —
+      `ProfileNeedsChangesView` reads the owner's `profile_moderation.decision_reason`,
+      prefix-matches the canned token to friendly copy (`RejectionFeedback` in
+      YentlShared; raw tokens never shown) and appends the matchmaker's note;
+      Edit & resubmit reuses `EditProfileView` (new `onSaved` hook) → save →
+      `markProfileComplete()` (coerced to `pending_ai` while approval is ON) →
+      best-effort `screen-profile` call → re-read state and re-route
+- [x] Screening wired to submit/resubmit — `ProfileService.requestScreening()`
+      invokes `screen-profile` with the owner's JWT after wizard completion and
+      after a resubmit; deliberately non-blocking (missing function/key or any
+      error is swallowed and the app routes on a re-read of `review_state`, so
+      a screening failure can never strand the user)
+- [ ] Exercise the consumer states against REAL screening (flag ON + deployed
+      `screen-profile` with `OPENAI_API_KEY`) — Slice 4, alongside the flag flip;
+      Slice 3 was verified on the local stack with simulated states
 
 ### Data migration
 - [ ] Retroactively run every profile created during MVP through the new approval flow before opening to outside users

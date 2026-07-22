@@ -8,11 +8,17 @@ import SwiftUI
 import YentlShared
 
 /// The signed-in user's place in the account lifecycle. Drives which screen
-/// the consumer app shows after authentication. (Pending / rejected states
-/// arrive with the Phase 3/12 profile-approval work.)
+/// the consumer app shows after authentication.
 private enum AccountStage {
     case needsOnboarding
     case needsProfile
+    /// Profile complete but review_state is pending_ai / pending_review
+    /// (only reachable while profile approval is ON): not in discovery yet.
+    case underReview
+    /// Profile rejected by a matchmaker; carries the raw
+    /// `profile_moderation.decision_reason` (parsed to friendly copy by the
+    /// screen, never shown raw).
+    case needsChanges(reasonText: String?)
     case ready
 }
 
@@ -79,7 +85,23 @@ struct ContentView: View {
             case .needsOnboarding:
                 OnboardingFlow(onComplete: { Task { await loadStage() } })
             case .needsProfile:
-                ProfileWizard(onComplete: { Task { await loadStage() } })
+                // On finish, best-effort AI screening (approval ON moves the
+                // profile from pending_ai; approval OFF or a failed call
+                // changes nothing) — then route on whatever the server holds.
+                ProfileWizard(onComplete: {
+                    Task {
+                        self.stage = nil  // spinner while screening + re-read run
+                        await profiles.requestScreening()
+                        await loadStage()
+                    }
+                })
+            case .underReview:
+                ProfileUnderReviewView(onRefresh: { Task { await loadStage() } })
+            case .needsChanges(let reasonText):
+                ProfileNeedsChangesView(
+                    reasonText: reasonText,
+                    onResubmitted: { Task { await loadStage() } }
+                )
             case .ready:
                 SignedInHomeView()
             }
@@ -104,7 +126,20 @@ struct ContentView: View {
                 stage = .needsProfile
                 return
             }
-            stage = .ready
+            switch try await profiles.fetchMyReviewState() {
+            case .pendingAI, .pendingReview:
+                stage = .underReview
+            case .rejected:
+                let moderation = try? await profiles.fetchMyModeration()
+                stage = .needsChanges(reasonText: moderation?.decisionReason)
+            default:
+                // .live — the only state a completed profile reaches while
+                // approval is OFF (completion writes it directly), so today's
+                // straight-into-the-app behavior is unchanged. draft / nil /
+                // unknown also fall through to the full app rather than
+                // stranding the user on a gate we can't explain.
+                stage = .ready
+            }
         } catch {
             statusError = error.localizedDescription
         }
