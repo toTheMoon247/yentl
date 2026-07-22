@@ -119,6 +119,63 @@ public final class MatchmakerService {
         }
     }
 
+    // MARK: - Profile approvals (Phase 12)
+
+    /// Count behind the Approvals tab badge. Kept fresh by
+    /// `pendingReviewProfiles()` / `refreshPendingReviewCount()`; 0 hides the
+    /// badge.
+    public private(set) var pendingReviewCount = 0
+
+    /// Completed profiles the AI flagged for human review, newest-flagged
+    /// first (the Approvals tab queue). AI-clean profiles auto-approve and
+    /// never appear here.
+    public func pendingReviewProfiles() async throws -> [PendingReviewProfile] {
+        do {
+            let rows: [PendingReviewProfile] = try await Backend.supabase
+                .rpc("pending_review_profiles")
+                .execute()
+                .value
+            pendingReviewCount = rows.count
+            return rows
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchmakerError.unexpected(error)
+        }
+    }
+
+    /// Badge-only refresh (e.g. on tab-bar appearance). Swallows errors — a
+    /// failed badge poll must never surface UI errors outside the tab.
+    public func refreshPendingReviewCount() async {
+        _ = try? await pendingReviewProfiles()
+    }
+
+    /// Approve a flagged profile — it goes live (and enqueues for matching).
+    public func approveProfile(_ profileID: UUID, note: String? = nil) async throws {
+        do {
+            try await Backend.supabase
+                .rpc("matchmaker_approve_profile",
+                     params: ApproveParams(target: profileID, note: note))
+                .execute()
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchmakerError.unexpected(error)
+        }
+    }
+
+    /// Reject a flagged profile. `reason` is required by the RPC — build it
+    /// with `ProfileRejectionReason.reasonText(note:)`.
+    public func rejectProfile(_ profileID: UUID, reason: String) async throws {
+        do {
+            try await Backend.supabase
+                .rpc("matchmaker_reject_profile",
+                     params: RejectParams(target: profileID, reason: reason))
+                .execute()
+        } catch {
+            if error is CancellationError { throw error }
+            throw MatchmakerError.unexpected(error)
+        }
+    }
+
     /// "Next profile" — move the pinned user to the back of the queue (revisit
     /// later) without matching.
     public func requeue(userID: UUID) async throws {
@@ -143,5 +200,19 @@ public final class MatchmakerService {
         enum CodingKeys: String, CodingKey {
             case limitCount = "limit_count"
         }
+    }
+
+    /// Internal (not private) so the key names + nil-note omission are
+    /// unit-tested: a drifted key would make the RPC call fail (or silently
+    /// drop the note), and an explicit-null note must stay omitted so the
+    /// server-side default applies.
+    struct ApproveParams: Encodable {
+        let target: UUID
+        let note: String?
+    }
+
+    struct RejectParams: Encodable {
+        let target: UUID
+        let reason: String
     }
 }

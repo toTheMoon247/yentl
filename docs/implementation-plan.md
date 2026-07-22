@@ -442,6 +442,13 @@ Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a h
       trigger coerces direct `live` writes (including the app's current
       completion update) to `pending_ai`, so the existing client keeps working
       under both flag values and self-approval is impossible.
+- [x] **The approval queue is a dedicated "Approvals" tab in the matchmaker
+      app** with a pending-count badge (decision 2026-07-22). Only FLAGGED
+      profiles (`review_state = 'pending_review'`) appear — clean ones
+      auto-approve and never show. Read path: the staff-only
+      `pending_review_profiles()` RPC, which lists only *completed* profiles
+      (in-progress wizard drafts share the `pending_review` column default and
+      must never surface as review work).
 
 ### Backend — **Slice 1 built + locally verified 2026-07-22 (not yet applied/deployed)**
 - [x] AI screening edge function: photos through moderation API (NSFW, faces present, single person) — `screen-profile`, verified against a mock OpenAI locally
@@ -451,10 +458,18 @@ Goal: replace the MVP mock from Phase 3 with the full approval flow. This is a h
 - [ ] Verify screening against the REAL OpenAI API (all local tests ran against a mock; needs `OPENAI_API_KEY` set as a function secret)
 - [ ] Flip `profile_approval_enabled` flag to `true` — **last step, after the matchmaker queue UI + consumer states exist**
 
-### Yentl Matchmaker
-- [ ] Approval queue list view (sorted by submission time)
-- [ ] Approval detail screen — full profile + AI flags + approve / reject buttons
-- [ ] Rejection reason entry (free text + canned reasons)
+### Yentl Matchmaker — **Slice 2 built + locally verified 2026-07-23**
+- [x] Approval queue list view (newest-flagged first) — "Approvals" tab with
+      pending-count badge; rows show name, flag summary, and when it was flagged
+      (`pending_review_profiles()` RPC + `ApprovalsView`)
+- [x] Approval detail screen — full profile + AI flags + approve / reject buttons —
+      reuses `ProfileScreen` (photos + hidden matchmaker fields) with the jsonb
+      moderation `reasons` rendered as human-readable lines on top
+- [x] Rejection reason entry (free text + canned reasons) — canned reasons
+      (`inappropriate_photos`, `not_a_single_person`, `contact_info_in_bio`,
+      `incomplete_or_fake`, `other`) + optional note (required for "other");
+      sent as `token` / `token: note` so the consumer rejected screen (Slice 3)
+      can prefix-match the token
 
 ### Yentl
 - [ ] "Profile under review" state UI

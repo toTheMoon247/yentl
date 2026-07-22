@@ -59,18 +59,27 @@ struct ContentView: View {
     }
 }
 
-/// Staff home: a tab bar with the Decision Panel (the core matchmaker UX) and
-/// a plain profile browser.
+/// Staff home: a tab bar with the Decision Panel (the core matchmaker UX), a
+/// plain profile browser, the profile approval queue, and recent matches.
 private struct MatchmakerHomeView: View {
+    @Environment(MatchmakerService.self) private var matchmaker
+
     var body: some View {
         TabView {
             DecisionPanelView()
                 .tabItem { Label("Review", systemImage: "rectangle.stack.person.crop") }
             QueueTab()
                 .tabItem { Label("Queue", systemImage: "list.bullet.rectangle") }
+            ApprovalsView()
+                .tabItem { Label("Approvals", systemImage: "checkmark.shield") }
+                // Count of AI-flagged profiles awaiting review; 0 hides it.
+                .badge(matchmaker.pendingReviewCount)
             RecentMatchesView()
                 .tabItem { Label("Matches", systemImage: "heart.text.square") }
         }
+        // Populate the badge on entry even if the Approvals tab is never
+        // opened; opening the tab keeps it fresh via the same service call.
+        .task { await matchmaker.refreshPendingReviewCount() }
     }
 }
 
