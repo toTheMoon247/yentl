@@ -265,7 +265,13 @@ Exit: every match lifecycle event fires a push to the right user with the right 
 
 Goal: per-confirmed-date fee charged via Apple IAP at the moment both users confirm.
 
-- [ ] **(OPEN, blocking)** Confirm Apple's stance — is a real-world date fee IAP-required or Stripe-eligible? Get this in writing or via Apple Developer support before building.
+- [x] **Decided 2026-07-22: build as Apple IAP.** The user's working assumption
+      is that Apple treats the per-confirmed-date fee as IAP-required, so we
+      plan and build for StoreKit 2. Caveat kept on the record: this has not
+      been confirmed in writing with Apple, and if a reviewer later rules the
+      fee is a real-world service (Stripe-eligible), the purchase layer would
+      need reworking. Worth confirming with Apple before Phase 9 build starts,
+      but it no longer blocks planning.
 - [ ] StoreKit 2 product setup in App Store Connect
 - [ ] Purchase UI on match-confirmed screen
 - [ ] Receipt validation via Supabase edge function
