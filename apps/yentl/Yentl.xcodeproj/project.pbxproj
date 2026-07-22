@@ -13,6 +13,7 @@
 		0EA051252FDA000100E0D195 /* OneSignalLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA051222FDA000100E0D195 /* OneSignalLocation */; };
 		0EA0513B2FDA000200E0D195 /* OneSignalExtension in Frameworks */ = {isa = PBXBuildFile; productRef = 0EA051372FDA000200E0D195 /* OneSignalExtension */; };
 		0EA0513D2FDA000200E0D195 /* OneSignalNotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0EA051302FDA000200E0D195 /* OneSignalNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0EB1C0032FDB100100E0D195 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 0EB1C0022FDB100100E0D195 /* RevenueCat */; };
 		0EC7A7052FCC100100E0D195 /* StreamChat in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7032FCC100100E0D195 /* StreamChat */; };
 		0EC7A7062FCC100100E0D195 /* StreamChatSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 0EC7A7042FCC100100E0D195 /* StreamChatSwiftUI */; };
 /* End PBXBuildFile section */
@@ -119,6 +120,7 @@
 				0EA051232FDA000100E0D195 /* OneSignalFramework in Frameworks */,
 				0EA051242FDA000100E0D195 /* OneSignalInAppMessages in Frameworks */,
 				0EA051252FDA000100E0D195 /* OneSignalLocation in Frameworks */,
+				0EB1C0032FDB100100E0D195 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,6 +199,7 @@
 				0EA051202FDA000100E0D195 /* OneSignalFramework */,
 				0EA051212FDA000100E0D195 /* OneSignalInAppMessages */,
 				0EA051222FDA000100E0D195 /* OneSignalLocation */,
+				0EB1C0022FDB100100E0D195 /* RevenueCat */,
 			);
 			productName = Yentl;
 			productReference = 0E3168D82FCB3BCB00E0D195 /* Yentl.app */;
@@ -308,6 +311,7 @@
 				0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */,
 				0EC7A7022FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swiftui" */,
 				0EA0511F2FDA000100E0D195 /* XCRemoteSwiftPackageReference "OneSignal-XCFramework" */,
+				0EB1C0012FDB100100E0D195 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0E3168D92FCB3BCB00E0D195 /* Products */;
@@ -792,6 +796,14 @@
 				minimumVersion = 5.2.0;
 			};
 		};
+		0EB1C0012FDB100100E0D195 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 		0EC7A7012FCC100100E0D195 /* XCRemoteSwiftPackageReference "stream-chat-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/GetStream/stream-chat-swift";
@@ -834,6 +846,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0EA0511F2FDA000100E0D195 /* XCRemoteSwiftPackageReference "OneSignal-XCFramework" */;
 			productName = OneSignalExtension;
+		};
+		0EB1C0022FDB100100E0D195 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EB1C0012FDB100100E0D195 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
 		};
 		0EC7A7032FCC100100E0D195 /* StreamChat */ = {
 			isa = XCSwiftPackageProductDependency;

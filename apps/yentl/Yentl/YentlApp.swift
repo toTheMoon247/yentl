@@ -25,6 +25,9 @@ struct YentlApp: App {
         OneSignal.Debug.setLogLevel(.LL_VERBOSE)
         #endif
         OneSignal.initialize(AppEnvironment.current.oneSignalAppID, withLaunchOptions: nil)
+        // Phase 9: RevenueCat starts anonymous; the Supabase identity is
+        // attached via PurchaseService.logIn in ContentView's auth task.
+        PurchaseService.configure()
     }
 
     var body: some Scene {

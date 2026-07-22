@@ -69,6 +69,28 @@ public enum AppEnvironment: String {
         }
     }
 
+    /// RevenueCat public SDK key for the current environment (consumer app).
+    ///
+    /// Public by design, like `streamChatAPIKey` / `oneSignalAppID`: it only
+    /// identifies the RevenueCat app to the client SDK. Purchase verification
+    /// uses the RevenueCat *secret* key, which lives solely in the
+    /// `record-payment` Edge Function's environment and never ships in the
+    /// client or this repo.
+    ///
+    /// Dev uses a RevenueCat **Test Store** app (`test_…` key): purchases
+    /// complete in the simulator with no App Store Connect setup. Prod will
+    /// swap to the real App Store app's `appl_…` key.
+    public var revenueCatAPIKey: String {
+        switch self {
+        case .dev:
+            return "test_XOkuIQYwjTJJWLMJkFlUWTXInKa"
+        case .staging:
+            fatalError("staging RevenueCat app not yet configured")
+        case .prod:
+            fatalError("prod RevenueCat app not yet configured")
+        }
+    }
+
     /// OneSignal App ID for the current environment (consumer app).
     ///
     /// Like `streamChatAPIKey`, this is public by design: the App ID only

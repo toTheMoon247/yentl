@@ -168,11 +168,13 @@ private struct InboxChannelList: View {
     @ViewBuilder
     private func row(_ channel: ChatChannel) -> some View {
         NavigationLink {
-            // Through MatchConversationView (not raw ChatChannelView) so the
-            // block/report menu is available from the inbox too. The rows are
-            // pre-filtered to confirmed matches, so the summary exists.
+            // Through the Phase 9 pay gate (which wraps
+            // MatchConversationView, not raw ChatChannelView) so both the
+            // payment gate and the block/report menu hold from the inbox
+            // too. The rows are pre-filtered to confirmed matches, so the
+            // summary exists.
             if let summary = match(for: channel) {
-                MatchConversationView(match: summary, onBlocked: {
+                MatchChatGateView(match: summary, onBlocked: {
                     Task { await loadMatches() }
                 })
                 .navigationTitle(name(of: channel))

@@ -55,10 +55,12 @@ struct ContentView: View {
             NotificationPreferencesService.shared.reset()
             if let id = auth.currentUserIDString {
                 OneSignal.login(id.lowercased())
+                await PurchaseService.logIn(supabaseUserID: id)
                 let name = (try? await profiles.fetchMyProfile())?.displayName
                 await chat.connect(userID: id.lowercased(), displayName: name)
             } else if case .signedOut = auth.state {
                 OneSignal.logout()
+                await PurchaseService.logOut()
                 await chat.disconnect()
             }
         }

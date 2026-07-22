@@ -159,9 +159,11 @@ private struct MatchDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) { Button("Close") { dismiss() } }
             }
             .navigationDestination(isPresented: $showingChat) {
+                // Phase 9: through the pay gate — the conversation only
+                // renders once BOTH participants have paid the date fee.
                 // Blocking from inside the chat resolves the whole match:
                 // close this detail sheet and refresh the list.
-                MatchConversationView(match: match, onBlocked: onResolved)
+                MatchChatGateView(match: match, onBlocked: onResolved)
                     .navigationTitle(match.otherDisplayName)
                     .navigationBarTitleDisplayMode(.inline)
             }
