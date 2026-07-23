@@ -12,6 +12,7 @@ struct YentlMatchmakerApp: App {
     @State private var profiles = ProfileService.shared
     @State private var matchmaker = MatchmakerService.shared
     @State private var matches = MatchService.shared
+    @State private var moderation = ModerationService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +21,7 @@ struct YentlMatchmakerApp: App {
                 .environment(profiles)
                 .environment(matchmaker)
                 .environment(matches)
+                .environment(moderation)
         }
     }
 }

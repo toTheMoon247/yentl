@@ -10,6 +10,8 @@ import YentlShared
 /// The signed-in user's place in the account lifecycle. Drives which screen
 /// the consumer app shows after authentication.
 private enum AccountStage {
+    /// Account suspended or banned by a matchmaker — gates everything else.
+    case blocked(status: AccountStatus)
     case needsOnboarding
     case needsProfile
     /// Profile complete but review_state is pending_ai / pending_review
@@ -82,6 +84,8 @@ struct ContentView: View {
     private var signedInContent: some View {
         if let stage {
             switch stage {
+            case .blocked(let status):
+                AccountBlockedView(status: status)
             case .needsOnboarding:
                 OnboardingFlow(onComplete: { Task { await loadStage() } })
             case .needsProfile:
@@ -118,6 +122,15 @@ struct ContentView: View {
         statusError = nil
         stage = nil
         do {
+            // Moderation gate comes first: a suspended/banned account can't use
+            // the app at all. A lapsed suspension is not blocked (isBlocked is
+            // false), so it falls through to the normal flow. Failure to read
+            // status is non-fatal — never lock a user out on a transient error.
+            if let status = try? await ModerationService.shared.fetchMyAccountStatus(),
+               status.isBlocked {
+                stage = .blocked(status: status)
+                return
+            }
             guard try await auth.isOnboardingComplete() else {
                 stage = .needsOnboarding
                 return

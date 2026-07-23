@@ -399,10 +399,10 @@ Exit: matchmaker boosts a user, that user's likes-received accelerates, threshol
 
 Goal: ship-safe basics. Some items here can be pulled forward and run alongside earlier phases.
 
-- [ ] In-app reporting flow (Yentl): report a profile, report a message
-- [ ] Block another user
-- [ ] Yentl Matchmaker moderation queue for reports
-- [ ] Bans and soft suspensions
+- [x] In-app reporting flow (Yentl): report a user / message from a chat — `BlockReportSheet` + `report_user` RPC (Phase 7). (Reporting a profile from discovery not yet surfaced.)
+- [x] Block another user — `BlockReportSheet` + `block_match` RPC (Phase 7)
+- [x] **Yentl Matchmaker moderation queue for reports — Slice 1 (2026-07-23).** "Reports" tab (badge = open count) → detail (reported user's full profile + report context) → Dismiss / Suspend / Ban / Reinstate. Backed by `moderation_open_reports` + `resolve_report` (all staff-only). Verified live end-to-end.
+- [x] **Bans and soft suspensions — Slice 1 (2026-07-23).** `users.account_status` (active/suspended/banned) + `suspended_until`; staff-only `suspend_user` / `ban_user` / `reinstate_user` (can't action staff; every action audited in `moderation_actions`); `account_is_blocked` (lapsed suspension auto-unblocks). Consumer gate (`AccountBlockedView`) shows blocked users a reason + sign-out; blocked accounts are filtered out of discovery + the matchmaking surfaces.
 - [ ] Sentry integration in both apps (crashes)
 - [ ] PostHog (or similar) integration for funnel analytics
 - [ ] Server-side structured logging (Supabase logs + edge function logging)

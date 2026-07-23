@@ -63,6 +63,7 @@ struct ContentView: View {
 /// plain profile browser, the profile approval queue, and recent matches.
 private struct MatchmakerHomeView: View {
     @Environment(MatchmakerService.self) private var matchmaker
+    @Environment(ModerationService.self) private var moderation
 
     var body: some View {
         TabView {
@@ -74,12 +75,17 @@ private struct MatchmakerHomeView: View {
                 .tabItem { Label("Approvals", systemImage: "checkmark.shield") }
                 // Count of AI-flagged profiles awaiting review; 0 hides it.
                 .badge(matchmaker.pendingReviewCount)
+            ReportsView()
+                .tabItem { Label("Reports", systemImage: "flag") }
+                // Count of open user reports; 0 hides it.
+                .badge(moderation.openReportCount)
             RecentMatchesView()
                 .tabItem { Label("Matches", systemImage: "heart.text.square") }
         }
-        // Populate the badge on entry even if the Approvals tab is never
-        // opened; opening the tab keeps it fresh via the same service call.
+        // Populate the badges on entry even if the tabs are never opened;
+        // opening a tab keeps its count fresh via the same service call.
         .task { await matchmaker.refreshPendingReviewCount() }
+        .task { await moderation.refreshOpenReportCount() }
     }
 }
 
@@ -206,4 +212,5 @@ private struct RoleFetchErrorView: View {
         .environment(ProfileService.shared)
         .environment(MatchmakerService.shared)
         .environment(MatchService.shared)
+        .environment(ModerationService.shared)
 }
