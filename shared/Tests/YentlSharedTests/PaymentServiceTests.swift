@@ -33,7 +33,7 @@ final class PaymentServiceTests: XCTestCase {
             "id": "0e0e0e0e-1111-2222-3333-444444444444",
             "match_id": "b477963c-87bb-46bf-99ca-bcbd9febf734",
             "user_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-            "product_id": "date_fee",
+            "product_id": "match_unlock",
             "store_transaction_id": "txn_123",
             "status": "paid",
             "created_at": "2026-07-22T12:00:00.000Z"
@@ -51,7 +51,7 @@ final class PaymentServiceTests: XCTestCase {
             response.payment.matchID.uuidString.lowercased(),
             "b477963c-87bb-46bf-99ca-bcbd9febf734"
         )
-        XCTAssertEqual(response.payment.productID, "date_fee")
+        XCTAssertEqual(response.payment.productID, "match_unlock")
     }
 
     /// A null product_id (nullable column) must not fail decoding.

@@ -160,7 +160,7 @@ private struct MatchDetailView: View {
             }
             .navigationDestination(isPresented: $showingChat) {
                 // Phase 9: through the pay gate — the conversation only
-                // renders once BOTH participants have paid the date fee.
+                // renders once BOTH participants have paid to unlock the match.
                 // Blocking from inside the chat resolves the whole match:
                 // close this detail sheet and refresh the list.
                 MatchChatGateView(match: match, onBlocked: onResolved)

@@ -30,7 +30,7 @@ and "Used for Tracking" is **No** for every data type below.
 | **User Content → Customer Support / Other** | Reports a user files about others | Safety/moderation |
 | **User Content → Emails or Text Messages** | In-app chat messages (via Stream) | Between matched users |
 | **Identifiers → User ID** | Supabase user id (also used as the id in Stream / RevenueCat / OneSignal) | |
-| **Purchases → Purchase History** | The per-confirmed-date fee | We store paid/refunded status, **not** card data |
+| **Purchases → Purchase History** | The match-unlock fee | We store paid/refunded status, **not** card data |
 | **Usage Data → Product Interaction** | Likes/passes and matches | Core functionality, not analytics |
 | **Other Data → Date of birth** | For 18+ verification and matching | See the Sensitive-Info judgment call below |
 
@@ -90,7 +90,7 @@ in-app via the onboarding age confirmation.
 > • Build a profile — our matchmakers (and a safety screen) review it before it
 >   goes live.
 > • Get introduced to people chosen for you, not served by an algorithm.
-> • When you both want to meet, each of you confirms with a small per-date fee —
+> • When you've both accepted, each of you unlocks the match with a small fee —
 >   and the conversation opens.
 >
 > **Why Yentl**
@@ -114,11 +114,11 @@ isn't mistaken for something it isn't:
 - **Explain the model:** "Matches are curated by human matchmakers. To
   demonstrate the full flow without a live matchmaker, use the provided demo
   account, which already has a match ready."
-- **On the fee (important):** state plainly that the in-app purchase is a
-  **per-confirmed-date fee that unlocks the in-app conversation** — a digital
-  unlock within the app, delivered through Apple IAP. *(See the standing note:
-  we proceed on the assumption Apple permits this; the review notes are where
-  we make the case for it.)*
+- **On the fee (important):** state plainly that the in-app purchase
+  (**"Unlock your match"**) unlocks the **in-app conversation** with a match —
+  a digital unlock within the app, delivered through Apple IAP (not a fee for a
+  real-world date or service). *(See docs/monetization-model.md; the review
+  notes are where we frame this as a digital unlock.)*
 - **Sign in with Apple** is implemented (native) alongside Google, per 4.8.
 
 ---

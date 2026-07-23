@@ -3,9 +3,9 @@
 //  Yentl
 //
 //  Phase 9: the "pay to unlock chat" gate. A confirmed match's conversation
-//  opens only once BOTH participants have paid their own date fee — until
-//  then this view shows the "Confirm your date" pay screen (or the "waiting
-//  for them" state once the current user has paid).
+//  opens only once BOTH participants have paid their own unlock fee — until
+//  then this view shows the "Unlock your match" pay screen (or the "waiting
+//  for them" state once the current user has paid). See docs/monetization-model.md.
 //
 //  Every path to a conversation goes through this gate: MatchDetailView's
 //  "Open chat" button and the ChatInboxView rows both present it instead of
@@ -42,7 +42,7 @@ struct MatchChatGateView: View {
             case .unlocked:
                 MatchConversationView(match: match, onBlocked: onBlocked)
             case .checking:
-                ProgressView("Checking your date…")
+                ProgressView("Checking your match…")
             case .locked(let youPaid):
                 PayToUnlockChatView(
                     match: match,
@@ -56,7 +56,7 @@ struct MatchChatGateView: View {
                     Image(systemName: "wifi.exclamationmark")
                         .font(.system(size: 44))
                         .foregroundStyle(DesignTokens.Palette.textSecondary)
-                    Text("Couldn't check your date")
+                    Text("Couldn't check your match")
                         .font(DesignTokens.Typography.titleMedium)
                     Text(message)
                         .font(DesignTokens.Typography.caption)
@@ -98,7 +98,7 @@ struct MatchChatGateView: View {
     }
 }
 
-/// The "Confirm your date" pay screen — the locked half of the gate.
+/// The "Unlock your match" pay screen — the locked half of the gate.
 private struct PayToUnlockChatView: View {
     let match: MatchSummary
     let youPaid: Bool
@@ -117,10 +117,10 @@ private struct PayToUnlockChatView: View {
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
             Spacer()
-            Image(systemName: youPaid ? "hourglass" : "calendar.badge.checkmark")
+            Image(systemName: youPaid ? "hourglass" : "lock.open.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(DesignTokens.Palette.primary)
-            Text(youPaid ? "You're confirmed!" : "Confirm your date")
+            Text(youPaid ? "You're in!" : "Unlock your match")
                 .font(DesignTokens.Typography.titleLarge)
             explainer
             if let notice {
@@ -148,15 +148,15 @@ private struct PayToUnlockChatView: View {
     @ViewBuilder
     private var explainer: some View {
         if youPaid {
-            Text("Your date fee is paid. As soon as \(match.otherDisplayName) confirms too, your chat opens.")
+            Text("You're paid. As soon as \(match.otherDisplayName) unlocks too, your chat opens.")
                 .font(DesignTokens.Typography.body)
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
         } else {
             Text("""
-                You and \(match.otherDisplayName) are matched! To open your chat, each of you \
-                confirms the date with a one-time fee\(price.map { " of \($0)" } ?? ""). \
-                Yentl only charges when a real date is on.
+                You and \(match.otherDisplayName) both said yes! To open your conversation, \
+                each of you unlocks the match with a one-time fee\(price.map { " of \($0)" } ?? ""). \
+                You only pay for matches you both want.
                 """)
                 .font(DesignTokens.Typography.body)
                 .foregroundStyle(DesignTokens.Palette.textSecondary)

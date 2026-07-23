@@ -55,7 +55,7 @@ public struct RecordPaymentResponse: Decodable, Sendable {
     }
 }
 
-/// Phase 9: the consumer side of the per-confirmed-date fee ledger.
+/// Phase 9: the consumer side of the match-unlock fee ledger.
 ///
 /// The ledger itself is written ONLY server-side (`record-payment` /
 /// `revenuecat-webhook`, after RevenueCat verification) — this service just

@@ -61,10 +61,10 @@ public struct LegalDocument: Identifiable, Sendable {
         details.
 
         ## 5. Fees and payments
-        Yentl charges a fee per confirmed date, purchased through Apple in-app \
-        purchase. Apple's terms and pricing apply. Purchases are generally \
-        non-refundable except where required by law or Apple's policies. Each \
-        participant pays their own fee to unlock the conversation.
+        Yentl charges a fee to unlock the conversation with a match, purchased \
+        through Apple in-app purchase. Apple's terms and pricing apply. Purchases \
+        are generally non-refundable except where required by law or Apple's \
+        policies. Each participant pays their own fee to open the conversation.
 
         ## 6. Your content
         You keep ownership of the photos and text you add. You grant Yentl a \
@@ -109,15 +109,15 @@ public struct LegalDocument: Identifiable, Sendable {
         - Profile information you provide: name, date of birth, gender, location, \
         bio, prompts, and photos.
         - Activity in the app: matches, messages, and moderation reports.
-        - Payment status for the per-date fee (processed by Apple and our payments \
-        provider — we do not store your card details).
+        - Payment status for the match-unlock fee (processed by Apple and our \
+        payments provider — we do not store your card details).
         - Technical data needed to run the app, such as a push-notification token.
 
         ## 2. How we use it
         - To make matchmaker-led introductions and run the matching queue.
         - To screen profiles for safety, including automated moderation of text \
         and photos.
-        - To process the per-date fee and unlock conversations.
+        - To process the match-unlock fee and open conversations.
         - To send you notifications you have allowed.
 
         ## 3. Who can see your information

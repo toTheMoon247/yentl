@@ -2,7 +2,9 @@
 //  PurchaseService.swift
 //  Yentl
 //
-//  Phase 9: the StoreKit side of the per-confirmed-date fee, via RevenueCat.
+//  Phase 9: the StoreKit side of the match-unlock fee, via RevenueCat.
+//  (Internal symbol names still read `dateFee*` — harmless, pre-rename; the
+//  product is `match_unlock`. See docs/monetization-model.md.)
 //
 //  Lives in the app target (not YentlShared) on purpose: the RevenueCat SDK
 //  is linked only into the consumer app — the matchmaker app takes no
@@ -84,7 +86,7 @@ enum PurchaseService {
               let package = offering.availablePackages.first else {
             throw PaymentError.server(
                 status: 404,
-                message: "The date fee isn't available right now. Please try again later."
+                message: "Match unlock isn't available right now. Please try again later."
             )
         }
         return package
