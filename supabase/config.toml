@@ -431,6 +431,14 @@ enabled = true
 # functions/screen-profile/index.ts.
 verify_jwt = false
 
+[functions.delete-account]
+enabled = true
+# Same reasoning as stream-token: the function authenticates the caller itself
+# via auth.getUser() (a user can only delete themselves), then uses the service
+# role to erase Storage + app data + the auth user. See
+# functions/delete-account/index.ts.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

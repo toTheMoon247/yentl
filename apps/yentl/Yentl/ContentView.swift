@@ -210,6 +210,7 @@ private struct ProfileTab: View {
     @Environment(AuthService.self) private var auth
     @State private var showingEdit = false
     @State private var showingNotificationSettings = false
+    @State private var showingAccountPrivacy = false
     @State private var reloadID = 0
     #if DEBUG
     @State private var showingTestLogin = false
@@ -248,11 +249,23 @@ private struct ProfileTab: View {
                     .accessibilityLabel("Notification settings")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingAccountPrivacy = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityIdentifier("account-privacy")
+                    .accessibilityLabel("Account and privacy")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     SignOutButton()
                 }
             }
             .navigationDestination(isPresented: $showingNotificationSettings) {
                 NotificationSettingsView()
+            }
+            .navigationDestination(isPresented: $showingAccountPrivacy) {
+                AccountPrivacyView()
             }
         }
         .sheet(isPresented: $showingEdit) {

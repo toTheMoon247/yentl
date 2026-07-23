@@ -407,7 +407,7 @@ Goal: ship-safe basics. Some items here can be pulled forward and run alongside 
 - [ ] PostHog (or similar) integration for funnel analytics
 - [ ] Server-side structured logging (Supabase logs + edge function logging)
 - [ ] Backup and restore drill on Supabase
-- [ ] GDPR: data export endpoint, data deletion endpoint
+- [x] **GDPR: data export + deletion — Slice 2 (2026-07-23).** `export_my_data()` RPC (owner-only, one JSON document) + a `delete-account` Edge Function (verifies the caller's JWT, then service-role-erases Storage photos → `public.users` cascade → the auth user). Consumer "Account & Privacy" screen (Profile → gear): **Download my data** (share sheet) + **Delete account** (App Store 5.1.1, confirm → erase → sign out). Verified live: a throwaway account exported all sections, then deleted to zero rows everywhere. External-service erasure (Stream Chat / RevenueCat / OneSignal) is a follow-up.
 - [ ] Age verification at signup (18+)
 - [ ] Terms of service + privacy policy pages
 - [ ] App Store assets — screenshots, description, privacy nutrition labels, age rating
