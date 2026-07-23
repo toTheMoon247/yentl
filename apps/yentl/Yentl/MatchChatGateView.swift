@@ -193,7 +193,7 @@ private struct PayToUnlockChatView: View {
                     if isPurchasing {
                         ProgressView()
                     } else {
-                        Label(price.map { "Confirm for \($0)" } ?? "Confirm date",
+                        Label(price.map { "Unlock for \($0)" } ?? "Unlock match",
                               systemImage: "heart.circle.fill")
                     }
                 }
