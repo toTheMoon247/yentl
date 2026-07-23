@@ -531,6 +531,8 @@ Profile approval day — and the single biggest gate before real users, now clea
 
 **Milestone reached: `v0.12.0`.** Safety, moderation, and data-rights are in place. Combined with today's earlier work, the app now clears the major App Store gates for content safety, account deletion, and sign-in.
 
+**Decision — the Apple payment question (owner's call, 2026-07-23).** We have never confirmed in writing with Apple that a real-world *per-date fee* is allowed as an in-app purchase. The owner has decided to **proceed as if it is confirmed** and accepts responsibility for that assumption. We are building and will submit on that basis; if a reviewer rules otherwise, the payment layer would need rework. Recording it here plainly so the assumption is visible, not buried.
+
 **Steps for next.** Mostly launch preparation and paperwork now:
 - **Legal review** — have a lawyer review the Terms/Privacy drafts, fill the blanks, and host the privacy policy at a public URL.
 - **Launch prep** — the real Apple in-app-purchase product, the App Store listing, then a **TestFlight beta** so the owner and a friend can install both apps properly.
