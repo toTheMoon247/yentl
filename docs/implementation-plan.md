@@ -53,13 +53,13 @@ Goal: users and matchmakers can sign up, log in, and stay logged in across launc
 
 ### Yentl
 - [ ] Onboarding screens — welcome, privacy, terms acceptance
-- [ ] Apple Sign-In flow + Supabase Auth handshake
+- [x] Apple Sign-In flow + Supabase Auth handshake — **native, validated on-device 2026-07-23.** `ASAuthorizationController` (hashed nonce) → `signInWithIdToken(provider: .apple)`. Verified end-to-end on a physical iPhone: real Apple sign-up → onboarding → profile → screened → matchmaker-approved → live.
 - [x] Google Sign-In flow + Supabase Auth handshake — validated end-to-end in the simulator
 - [x] Persistent session handling and logout — session persists in the Keychain across launches (auto-refresh on); shared `SignOutButton` wired into the signed-in home
 - [ ] Account state model (logged out / no profile / profile pending / profile live / rejected)
 
 ### Yentl Matchmaker
-- [x] Google Sign-In + Supabase Auth handshake — validated end-to-end; Apple Sign-In remains a stub until Phase 8 (Apple Developer enrollment)
+- [x] Google Sign-In + Supabase Auth handshake — validated end-to-end. Apple Sign-In shares the same `AuthService.signInWithApple()` (real since 2026-07-23); the matchmaker App ID + Sign in with Apple capability are auto-provisioned once its target has a signing team.
 - [x] Role-based access check on app launch — validated: `user` role sees Access Pending; promoting to `matchmaker`/`admin` routes to `MatchmakerHomeView`
 - [x] Logout — shared `SignOutButton` on both the staff home and Access Pending screens
 
@@ -70,7 +70,7 @@ Goal: users and matchmakers can sign up, log in, and stay logged in across launc
 
 Exit: a fresh install of either app can sign up via Apple or Google; the Matchmaker app then gates access on the `role` column — non-matchmakers see an "access pending" state until promoted by an admin.
 
-Auth method note: Apple + Google only. Email/password is intentionally not supported. App Store Review Guideline 4.8 requires Sign in with Apple when offering Google sign-in, so both ship together; Apple sign-in is blocked on getting an Apple Developer account.
+Auth method note: Apple + Google only. Email/password is intentionally not supported. App Store Review Guideline 4.8 requires Sign in with Apple when offering Google sign-in, so both ship together. **Both are now live** — Apple sign-in was implemented natively and verified on-device on 2026-07-23 (v0.11.0), clearing the last 4.8 blocker.
 
 ---
 

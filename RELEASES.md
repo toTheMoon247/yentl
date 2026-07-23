@@ -37,6 +37,43 @@ commit it points at.
 
 ---
 
+## v0.11.0 — Native Sign in with Apple (2026-07-23)
+
+The second auth provider, and the last hard **App Store Guideline 4.8** blocker
+(offering Google requires offering Apple). Implemented **natively** — not web
+OAuth — and verified end-to-end on a physical iPhone. CI green on `9f42454`.
+
+- **Flow:** `ASAuthorizationController` with a hashed nonce → Supabase
+  `signInWithIdToken(provider: .apple, idToken:, nonce: rawNonce)`. The raw nonce
+  round-trips so Supabase verifies `SHA256(nonce)` against Apple's signed claim
+  (replay protection). `AuthService.signInWithApple()` replaces the old throwing
+  stub; user cancellation maps to `CancellationError` so the sheet stays silent.
+- **Shared, iOS-guarded.** `AppleSignIn.swift` (coordinator + nonce/SHA256 utils)
+  is `#if os(iOS)`, so the shared package's macOS host build (CI) stays green.
+- **Entitlement on both apps.** Consumer already had an entitlements file; the
+  matchmaker got a new one plus `CODE_SIGN_ENTITLEMENTS` wiring. The matchmaker
+  also needed a signing team (`DEVELOPMENT_TEAM`) for device builds — it had been
+  simulator-only; with the team set, Xcode auto-registers the `com.yentl.matchmaker`
+  App ID and enables Sign in with Apple on it.
+- **Verified end-to-end, on hardware.** A real Apple sign-up created an `apple`
+  identity, went through onboarding, built a profile, was **AI-flagged**
+  (two-person photo, `gpt-4o-mini`) → `pending_review`, **approved by a matchmaker**
+  in the internal app running on-device (`seed-staff-01`, audited) → `live`. The
+  full Apple-auth + Phase-12 circuit, proven across two real devices, then the
+  test account was cleaned up (production back to 41 profiles).
+
+Two one-time dashboard steps enabled it (not automatable): the Sign in with Apple
+capability on the App ID, and the Apple provider in Supabase with the bundle ids
+as authorized client ids. Native iOS needs no Services ID / OAuth secret.
+
+**Operational note:** the live project uses the new Supabase API key system. The
+functions gateway rejects `sb_` keys in the `Authorization` header, but the
+**Storage API** accepts the legacy `service_role` JWT as bearer (used here to
+delete the test account's photos). Direct `DELETE` from `storage.objects` is
+blocked by a guard trigger — use the Storage API.
+
+---
+
 ## v0.10.0 — Phase 12: Profile Approval Pipeline (2026-07-23)
 
 The launch gate. Every new profile now goes through **AI screening** before it

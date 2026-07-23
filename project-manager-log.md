@@ -517,9 +517,12 @@ Profile approval day — and the single biggest gate before real users, now clea
 
 **Milestone reached: `v0.10.0`.** With approval live, the profile-screening requirement for an App Store submission is no longer a blocker.
 
+**Then, the same day, we did "Sign in with Apple" for real — and it all clicked together.** Apple's App Store rules require offering "Sign in with Apple" whenever you offer Google, and until today ours was just a placeholder button. We built the real thing (the native Apple sign-in that pops up Face ID), and the owner flipped on the two required switches — one in Apple's developer site, one in Supabase. Then the best possible test happened on a real phone: the owner signed up as a brand-new person using Apple, went through onboarding, and built a profile — and the AI screener **caught that the profile photo had two people in it** and held it for review. The owner then opened the *matchmaker* app on the phone, saw that flagged profile in the Approvals list, approved it, and watched it go live on the first phone seconds later. That's the entire product working end to end, with real sign-in, real AI screening, and a real human decision — across two devices. Afterwards we deleted that test account so the real database stays clean. A small snag along the way: the internal matchmaker app had never been set up to run on a physical phone (only the simulator), so its first device build failed until we gave it a signing identity — a one-line fix.
+
+**Milestone reached: `v0.11.0`.** Both sign-in methods (Apple + Google) are now real and working, which clears the last Apple-rules blocker for submitting the app.
+
 **Steps for next.** The list keeps narrowing toward launch:
 - **Safety & legal (Phase 11)** — the matchmaker moderation queue for reports, data export/delete for privacy law, terms & privacy pages.
-- **Real Apple Sign-In** (still a placeholder; Apple requires it because we offer Google).
 - **Launch prep** — the real Apple in-app-purchase product, the App Store listing, then a **TestFlight beta** so the owner and a friend can install both apps properly.
 - Still open from before: confirming Apple's stance on the date-fee purchase in writing; the clearer countdown clock; the notification anti-impersonation lock.
 - Smaller follow-up on today's work: re-screen a profile when a *live* user edits it (right now screening only runs on first submit and resubmits), and a push notification when a profile's review status changes.
