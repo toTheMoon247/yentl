@@ -18,6 +18,7 @@ Naming note: these were renamed from "Dating App" and "Yentl App" — do not rei
 - `docs/project-scope.md` — product scope, two-app architecture, monetization, Decision Panel design, elevator pitch.
 - `docs/tech-stack.md` — chosen stack table.
 - `docs/implementation-plan.md` — phase-by-phase task breakdown. **Confirm the current phase here before starting work.**
+- `project-manager-log.md` — the running project journal. **The newest entry is the current status + what's next — read it to resume where we left off.** (Updated once per session, at session end, so mid-session live state may be ahead of it; topic docs like `docs/app-store-submission-kit.md` §0 hold the to-the-minute status.)
 
 ## Repository layout
 
@@ -92,7 +93,7 @@ Some setup steps are dashboard-only and cannot be done through any API — enabl
 
 ## Tech stack (summary)
 
-Swift + SwiftUI on iOS 17+, Supabase (Postgres + Auth + Storage + Edge Functions), Stream Chat for messaging, OneSignal for push, Apple IAP for the per-confirmed-date fee. Full table in `docs/tech-stack.md`.
+Swift + SwiftUI on iOS 17+, Supabase (Postgres + Auth + Storage + Edge Functions), Stream Chat for messaging, OneSignal for push, Apple IAP for the per-match unlock fee ("Unlock your match" — see `docs/monetization-model.md`). Full table in `docs/tech-stack.md`.
 
 ## Design decisions worth remembering
 
