@@ -37,6 +37,40 @@ commit it points at.
 
 ---
 
+## v0.12.0 — Safety, Moderation & Data Rights (2026-07-23)
+
+Phase 11's launch-critical safety + legal work, in three verified slices. Clears
+the App Store safety-and-legal gates: acting on reports, in-app account deletion
+(Guideline 5.1.1), and Terms/Privacy. CI green on `22ce42f`.
+
+- **Reports moderation queue + bans/suspensions** (migration `20260723120000`).
+  Users could already block/report (Phase 7) but reports went nowhere. Now:
+  `users.account_status` (active/suspended/banned) + `suspended_until`;
+  staff-only `moderation_open_reports` / `resolve_report` / `suspend_user` /
+  `ban_user` / `reinstate_user` (reject non-staff, audited in
+  `moderation_actions`, can't action a staff account); `account_is_blocked`
+  (lapsed suspension auto-unblocks, no cron). Blocked accounts are filtered out
+  of discovery + the matchmaking surfaces. Matchmaker **Reports tab**
+  (badge → detail → Dismiss/Suspend/Ban/Reinstate); consumer **blocked gate**.
+  Verified live end-to-end; 45 pgTAP.
+- **Account deletion + data export** (migration `20260723160000`,
+  `delete-account` Edge Function). `export_my_data()` returns one JSON document;
+  `delete-account` verifies the caller's JWT then service-role-erases Storage →
+  `public.users` (cascade) → the auth user. Consumer **Account & Privacy**
+  screen: Download my data + Delete account (confirm → erase → sign out).
+  Verified live: a throwaway account exported all sections, then deleted to zero
+  rows everywhere while the real users were untouched.
+- **Terms of Service + Privacy Policy** — in-app `LegalDocument` content +
+  renderer, wired into the onboarding consent step and Account & Privacy.
+
+**Not launch-complete:** the legal text is honest starter copy that **needs a
+lawyer's review** + placeholders (entity, address, governing law) and a
+**publicly hosted** privacy-policy URL for the listing. Deferred Phase 11 ops
+(Sentry, PostHog, structured logging, backup/restore drill) and external-service
+erasure on delete (Stream/RevenueCat/OneSignal) are tracked, not launch-blocking.
+
+---
+
 ## v0.11.0 — Native Sign in with Apple (2026-07-23)
 
 The second auth provider, and the last hard **App Store Guideline 4.8** blocker

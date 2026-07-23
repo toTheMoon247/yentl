@@ -521,8 +521,19 @@ Profile approval day — and the single biggest gate before real users, now clea
 
 **Milestone reached: `v0.11.0`.** Both sign-in methods (Apple + Google) are now real and working, which clears the last Apple-rules blocker for submitting the app.
 
-**Steps for next.** The list keeps narrowing toward launch:
-- **Safety & legal (Phase 11)** — the matchmaker moderation queue for reports, data export/delete for privacy law, terms & privacy pages.
+**And we kept going — the whole safety & legal block (Phase 11) is now done too.** This was the last big pile of "you can't ship a dating app without this" work, and it came in three parts:
+
+1. **Acting on reports, plus bans and suspensions.** People could already report or block someone in a chat, but those reports went nowhere. Now matchmakers have a **Reports** tab: they see who was reported and why (with a "repeat offender" count), open the reported person's profile, and choose to dismiss, suspend (for 24 hours / 7 days / 30 days), or permanently ban them. A banned or suspended person is locked out of the app with a clear explanation and disappears from everyone's matching — and a suspension lifts itself automatically when its time is up. Every action is logged for accountability, and the system won't let anyone ban a fellow matchmaker. Tested end to end on the live system.
+
+2. **Account deletion and "download my data."** Apple flatly requires that people can delete their account from inside the app, and privacy law requires letting them get a copy of their data. Both now exist in a new **Account & Privacy** screen: "Download my data" hands back a full copy as a file, and "Delete account" permanently erases everything — profile, photos, matches, messages — after a confirmation. We proved the deletion really works by creating a throwaway account and watching it vanish completely from every system, while everyone else was untouched.
+
+3. **Terms of Service and Privacy Policy.** The sign-up screen asked people to agree to these, but there was nothing behind the words. Now both are real, readable documents inside the app (and honestly describe how Yentl works — human matchmakers, the AI photo check, the per-date fee, who we share data with). **Important caveat:** these are solid first drafts, not lawyer-approved — a lawyer needs to review them and a few blanks (company name, address) filled in before we submit, and the App Store also needs these hosted at a public web link.
+
+**Milestone reached: `v0.12.0`.** Safety, moderation, and data-rights are in place. Combined with today's earlier work, the app now clears the major App Store gates for content safety, account deletion, and sign-in.
+
+**Steps for next.** Mostly launch preparation and paperwork now:
+- **Legal review** — have a lawyer review the Terms/Privacy drafts, fill the blanks, and host the privacy policy at a public URL.
 - **Launch prep** — the real Apple in-app-purchase product, the App Store listing, then a **TestFlight beta** so the owner and a friend can install both apps properly.
+- **Optional operational polish (not blocking):** crash reporting, basic analytics, a backup/restore drill, and erasing a deleted user's data from the outside services too (chat, payments, push).
 - Still open from before: confirming Apple's stance on the date-fee purchase in writing; the clearer countdown clock; the notification anti-impersonation lock.
 - Smaller follow-up on today's work: re-screen a profile when a *live* user edits it (right now screening only runs on first submit and resubmits), and a push notification when a profile's review status changes.
