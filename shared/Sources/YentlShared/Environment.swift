@@ -78,8 +78,11 @@ public enum AppEnvironment: String {
     /// client or this repo.
     ///
     /// Dev uses a RevenueCat **Test Store** app (`test_…` key): purchases
-    /// complete in the simulator with no App Store Connect setup. Prod will
-    /// swap to the real App Store app's `appl_…` key.
+    /// complete in the simulator with no App Store Connect setup. Prod uses the
+    /// real **App Store** app's `appl_…` key (RevenueCat project "Yentl",
+    /// app `app59442a6809`, product `match_unlock`). The App Store app still
+    /// needs its App-Specific Shared Secret set in the RevenueCat dashboard
+    /// before live/sandbox purchases verify.
     public var revenueCatAPIKey: String {
         switch self {
         case .dev:
@@ -87,7 +90,7 @@ public enum AppEnvironment: String {
         case .staging:
             fatalError("staging RevenueCat app not yet configured")
         case .prod:
-            fatalError("prod RevenueCat app not yet configured")
+            return "appl_ihJarJvOIqcqgCOIfnpFLMJevRK"
         }
     }
 
