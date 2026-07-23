@@ -53,15 +53,18 @@ and "Used for Tracking" is **No** for every data type below.
 | **User Content → Customer Support / Other** | Reports a user files about others | Safety/moderation |
 | **User Content → Emails or Text Messages** | In-app chat messages (via Stream) | Between matched users |
 | **Identifiers → User ID** | Supabase user id (also used as the id in Stream / RevenueCat / OneSignal) | |
+| **Financial Info → Other Financial Info** | **Annual income** — a *required* profile field, used for matchmaking | Hidden matchmaker field (owner + staff only); NOT card/payment data |
 | **Purchases → Purchase History** | The match-unlock fee | We store paid/refunded status, **not** card data |
 | **Usage Data → Product Interaction** | Likes/passes and matches | Core functionality, not analytics |
 | **Other Data → Date of birth** | For 18+ verification and matching | See the Sensitive-Info judgment call below |
 
 ### Data explicitly **NOT** collected
-Precise/GPS location · Contacts · Health & Fitness · **Financial (card) info**
-(Apple/RevenueCat process payments; the developer never receives card details) ·
-Browsing/Search history · Audio · Diagnostics/Crash data *(none today — when a
-crash reporter like Sentry is added, declare **Diagnostics → Crash Data**)*.
+Precise/GPS location · Contacts · Health & Fitness · **Payment/card info**
+(Apple/RevenueCat process payments; the developer never receives card details —
+note: annual **income** IS collected, declared under Financial Info → Other
+Financial Info above) · Browsing/Search history · Audio · Diagnostics/Crash data
+*(none today — when a crash reporter like Sentry is added, declare **Diagnostics
+→ Crash Data**)*.
 
 ### Two judgment calls to settle with the lawyer **[YOU]**
 1. **Sensitive Info (sexual orientation).** Apple's "Sensitive Info" category
