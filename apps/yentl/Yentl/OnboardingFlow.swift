@@ -26,6 +26,7 @@ struct OnboardingFlow: View {
     @Environment(AuthService.self) private var auth
     @State private var step: Step = .welcome
     @State private var agreedToTerms = false
+    @State private var presentedDocument: LegalDocument?
     @State private var confirmedAge = false
     @State private var isSubmitting = false
     @State private var errorMessage: String?
@@ -127,6 +128,12 @@ struct OnboardingFlow: View {
             }
             .disabled(isSubmitting)
 
+            HStack(spacing: DesignTokens.Spacing.lg) {
+                Button("Terms of Service") { presentedDocument = .termsOfService }
+                Button("Privacy Policy") { presentedDocument = .privacyPolicy }
+            }
+            .font(DesignTokens.Typography.caption)
+
             if let errorMessage {
                 Text(errorMessage)
                     .font(DesignTokens.Typography.caption)
@@ -151,6 +158,16 @@ struct OnboardingFlow: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(!canContinue || isSubmitting)
+        }
+        .sheet(item: $presentedDocument) { document in
+            NavigationStack {
+                LegalDocumentView(document: document)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { presentedDocument = nil }
+                        }
+                    }
+            }
         }
     }
 

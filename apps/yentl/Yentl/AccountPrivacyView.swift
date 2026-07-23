@@ -40,6 +40,19 @@ struct AccountPrivacyView: View {
                    + "JSON file you can save or share.")
             }
 
+            Section("Legal") {
+                NavigationLink {
+                    LegalDocumentView(document: .termsOfService)
+                } label: {
+                    Label("Terms of Service", systemImage: "doc.text")
+                }
+                NavigationLink {
+                    LegalDocumentView(document: .privacyPolicy)
+                } label: {
+                    Label("Privacy Policy", systemImage: "hand.raised")
+                }
+            }
+
             Section {
                 Button(role: .destructive) {
                     confirmingDelete = true
