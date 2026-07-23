@@ -104,7 +104,7 @@ Non-obvious choices recorded across the docs:
 - **Attractiveness rating is matchmaker-assigned**, not algorithmic, and is captured on first Decision Panel encounter (Phase 5) rather than at approval — because Phase 3 is mocked.
 - **MVP is heterosexual matching only**; the queue alternates M/F. Same-sex support is deferred.
 - The Profile Approval Workflow step was renamed from "Yentl Review" → **"Matchmaker Review"** to avoid clashing with the consumer app name.
-- **Apple Developer Program: the user confirmed on 2026-07-22 that they have it.** This was previously the project's longest-lead-time blocker, deferred to Phase 8 (Push Notifications) — that deferral is now resolved, so do not keep flagging enrollment. Apple Sign-In is still only a stub button from Phase 1 and Google Sign-In remains the only working auth path; wiring up real Apple Sign-In and APNs keys is now unblocked work, not a waiting game.
+- **Apple Developer Program: the user confirmed on 2026-07-22 that they have it.** This was previously the project's longest-lead-time blocker, deferred to Phase 8 (Push Notifications) — that deferral is now resolved, so do not keep flagging enrollment. **Real native Sign in with Apple is now implemented** (2026-07-23) — `AuthService.signInWithApple()` runs `ASAuthorizationController` and exchanges the identity token via Supabase `signInWithIdToken`; the "Sign in with Apple" capability/entitlement is on both apps. It still needs two one-time dashboard steps to function at runtime: the capability enabled on the App ID(s) in the Apple Developer console, and the Apple provider enabled in Supabase (bundle id as an authorized client). Google remains the other working path.
 
 ## Git and commit conventions
 

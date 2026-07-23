@@ -1,6 +1,9 @@
 import Foundation
 import Observation
 import Supabase
+#if os(iOS)
+import AuthenticationServices
+#endif
 
 /// Authentication state derived from the Supabase session.
 public enum AuthState: Sendable {
@@ -14,18 +17,18 @@ public enum AuthState: Sendable {
 
 /// Auth-related errors surfaced to the UI.
 public enum AuthError: LocalizedError {
-    /// Apple Sign-In is stubbed until the Apple Developer Program is active.
-    /// See `docs/implementation-plan.md` Phase 8 — the enrolment is gated there.
-    case appleSignInPendingDeveloperAccount
     case notSignedIn
+    /// Sign in with Apple invoked on a platform without the native UI (macOS
+    /// host build). Never hit in the shipping iOS apps.
+    case appleSignInUnavailable
     case unexpected(any Error)
 
     public var errorDescription: String? {
         switch self {
-        case .appleSignInPendingDeveloperAccount:
-            return "Sign in with Apple will be available once the Apple Developer account is active. Please sign in with Google for now."
         case .notSignedIn:
             return "You're not signed in."
+        case .appleSignInUnavailable:
+            return "Sign in with Apple isn't available here."
         case .unexpected(let error):
             return error.localizedDescription
         }
@@ -88,13 +91,33 @@ public final class AuthService {
         }
     }
 
-    /// Stub: throws until the Apple Developer Program is active.
+    /// Native Sign in with Apple.
     ///
-    /// Tracked in `docs/implementation-plan.md` Phase 8 — the App Store
-    /// guideline 4.8 pairing with Google means we always ship both
-    /// providers, so this stub gets replaced (not removed) at Phase 8.
+    /// Runs the system authorization sheet (`ASAuthorizationController`), then
+    /// exchanges Apple's identity token with Supabase via `signInWithIdToken`.
+    /// The `authStateChanges` stream (see `observeAuthChanges`) turns the new
+    /// session into `.signedIn`, so there's nothing to return.
+    ///
+    /// Requires the "Sign in with Apple" capability on the app and the Apple
+    /// provider enabled in Supabase (bundle id listed as an authorized client).
+    /// User cancellation is rethrown as `CancellationError` so the UI can stay
+    /// silent instead of showing an error.
     public func signInWithApple() async throws {
-        throw AuthError.appleSignInPendingDeveloperAccount
+        #if os(iOS)
+        do {
+            let (idToken, rawNonce) = try await AppleSignInCoordinator().start()
+            try await Backend.supabase.auth.signInWithIdToken(
+                credentials: .init(provider: .apple, idToken: idToken, nonce: rawNonce)
+            )
+        } catch let error as ASAuthorizationError where error.code == .canceled {
+            throw CancellationError()
+        } catch {
+            if error is CancellationError { throw error }
+            throw AuthError.unexpected(error)
+        }
+        #else
+        throw AuthError.appleSignInUnavailable
+        #endif
     }
 
     public func signOut() async throws {

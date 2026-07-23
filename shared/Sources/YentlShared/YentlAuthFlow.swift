@@ -157,6 +157,8 @@ public struct YentlAuthFlow: View {
             case .google:
                 try await auth.signInWithGoogle(redirectURL: config.redirectURL)
             }
+        } catch is CancellationError {
+            // User dismissed the provider sheet — not an error worth showing.
         } catch {
             errorMessage = error.localizedDescription
         }
