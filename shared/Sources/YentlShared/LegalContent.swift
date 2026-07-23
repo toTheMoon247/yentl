@@ -6,8 +6,9 @@
 //  onboarding (the consent step) and in Account & Privacy.
 //
 //  ⚠️ These are plain-language starter documents that reflect how the app
-//  actually works (human matchmakers, AI screening via OpenAI, per-date Apple
-//  IAP, the sub-processors, in-app export/deletion). They are NOT a substitute
+//  actually works (human matchmakers, AI screening via OpenAI, the per-match
+//  unlock Apple IAP, the sub-processors, in-app export/deletion). They are NOT a
+//  substitute
 //  for legal review — a lawyer must review both before App Store submission,
 //  and the placeholders (company entity, address, governing law) must be
 //  filled in. Tracked in docs/implementation-plan.md (Phase 11) and the PM log.
@@ -93,7 +94,7 @@ public struct LegalDocument: Identifiable, Sendable {
         the updated Terms.
 
         ## 11. Contact
-        Questions about these Terms? Email legal@yentl.app.
+        Questions about these Terms? Email the.yona.app@gmail.com.
         """
     )
 
@@ -144,7 +145,7 @@ public struct LegalDocument: Identifiable, Sendable {
         Depending on where you live, you may have rights to access, correct, \
         export, or delete your personal data, and to object to certain \
         processing. The in-app export and delete tools cover the main ones; email \
-        privacy@yentl.app for anything else.
+        the.yona.app@gmail.com for anything else.
 
         ## 7. Security
         We use industry-standard measures to protect your data, including \
@@ -164,7 +165,7 @@ public struct LegalDocument: Identifiable, Sendable {
         you of material changes in the app.
 
         ## 11. Contact
-        Questions about your privacy? Email privacy@yentl.app.
+        Questions about your privacy? Email the.yona.app@gmail.com.
         """
     )
 }

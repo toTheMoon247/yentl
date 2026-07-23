@@ -43,7 +43,7 @@ struct AccountBlockedView: View {
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.md))
             }
-            Text("If you think this is a mistake, contact support@yentl.app.")
+            Text("If you think this is a mistake, contact the.yona.app@gmail.com.")
                 .font(DesignTokens.Typography.caption)
                 .foregroundStyle(DesignTokens.Palette.textSecondary)
                 .multilineTextAlignment(.center)
