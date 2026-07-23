@@ -433,6 +433,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				CODE_SIGN_ENTITLEMENTS = YentlMatchmaker/YentlMatchmaker.entitlements;
+				DEVELOPMENT_TEAM = 867ZCC5J4J;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yentl.matchmaker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -468,6 +469,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				CODE_SIGN_ENTITLEMENTS = YentlMatchmaker/YentlMatchmaker.entitlements;
+				DEVELOPMENT_TEAM = 867ZCC5J4J;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yentl.matchmaker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
