@@ -11,6 +11,29 @@ marked **[YOU]**.
 
 ---
 
+## 0. Launch progress (live status — updated 2026-07-23)
+
+**Done:**
+- ✅ **App record** created in App Store Connect (`com.yentl.app`, Apple ID `6794065289`).
+- ✅ **IAP** created — **`match_unlock`** (Consumable, display "Unlock your match", $4.99); Availability + Pricing + Localization set. *Not* yet "Add for Review" (it submits with the first app version).
+- ✅ **RevenueCat production wired** — App Store app `app59442a6809`; product `match_unlock` (`prod99110c4a83`) in the **`default`** offering (`ofrng2fa65a0d5e`), package `pkge67e1553d60`, alongside the dev Test Store `date_fee`. Prod public key `appl_…` is in `Environment.swift` (`.prod` case).
+- ✅ **Monetization reframed** to "Unlock your match" (see `docs/monetization-model.md`).
+- ✅ **Legal HTML** generated (`docs/legal/terms.html`, `privacy.html`); **screenshots** captured (`~/Documents/Yentl App Store Screenshots`).
+
+**Pending — you (dashboards):**
+- ⬜ Add the **App-Specific Shared Secret** to the RevenueCat "Yentl App Store" app (before sandbox purchase testing; not blocking metadata/build).
+- ⬜ Enable **GitHub Pages** for the legal URLs (repo Settings → Pages → `main` / `/docs`).
+- ⬜ Legal review of Terms/Privacy + fill placeholders (entity, address, governing law).
+
+**Pending — metadata (next up, §1–3 below):**
+- ⬜ App Privacy questionnaire (§1) · Age rating 17+ (§2) · Category · Listing copy (§3) · **Privacy Policy URL** · Screenshots.
+- ⬜ IAP **review screenshot** (the pay-gate) — I'll capture before submission.
+
+**Pending — build/submit:**
+- ⬜ Version/build number → Archive in Xcode → upload → **TestFlight** on device → submit app + IAP together (review notes §4 + demo account).
+
+---
+
 ## 1. App Privacy ("nutrition labels")
 
 ### Tracking
