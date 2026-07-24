@@ -77,16 +77,24 @@ public enum AppEnvironment: String {
     /// `record-payment` Edge Function's environment and never ships in the
     /// client or this repo.
     ///
-    /// Dev uses a RevenueCat **Test Store** app (`test_…` key): purchases
-    /// complete in the simulator with no App Store Connect setup. Prod uses the
-    /// real **App Store** app's `appl_…` key (RevenueCat project "Yentl",
-    /// app `app59442a6809`, product `match_unlock`). The App Store app still
-    /// needs its App-Specific Shared Secret set in the RevenueCat dashboard
-    /// before live/sandbox purchases verify.
+    /// The app currently runs as `.dev` everywhere (`YENTL_ENV` is unset), and
+    /// `.dev` points at the single live backend. Payments are the one thing that
+    /// MUST differ by build type:
+    ///   - **Debug** (simulator / local dev) → the RevenueCat **Test Store**
+    ///     (`test_…`): purchases complete with no App Store Connect setup.
+    ///   - **Release** (TestFlight / App Store archive) → the real **App Store**
+    ///     app's `appl_…` key (RevenueCat project "Yentl", app `app59442a6809`,
+    ///     product `match_unlock`) — so shipping builds do real purchases.
+    /// The App Store app has its In-App Purchase key set in RevenueCat, so
+    /// sandbox/live purchases verify.
     public var revenueCatAPIKey: String {
         switch self {
         case .dev:
-            return "test_XOkuIQYwjTJJWLMJkFlUWTXInKa"
+            #if DEBUG
+            return "test_XOkuIQYwjTJJWLMJkFlUWTXInKa"   // Test Store (simulator/dev)
+            #else
+            return "appl_ihJarJvOIqcqgCOIfnpFLMJevRK"   // App Store (TestFlight/release)
+            #endif
         case .staging:
             fatalError("staging RevenueCat app not yet configured")
         case .prod:

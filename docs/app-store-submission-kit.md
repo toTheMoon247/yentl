@@ -98,7 +98,7 @@ in-app via the onboarding age confirmation.
 
 - **App Name** (≤30): `Yentl` *(or `Yentl — Matchmaker Dating`, 25 chars, for search)*
 - **Subtitle** (≤30): `Real matchmakers, real dates`
-- **Promotional text** (≤170): `Skip the endless swiping. Yentl's professional matchmakers hand-pick your introductions — you unlock only the matches you both want.`
+- **Promotional text** (≤170): `Other apps make you swipe forever. We really match.`
 - **Keywords** (≤100, comma-separated, no spaces):
   `matchmaker,dating,matchmaking,singles,relationships,serious dating,introductions,love,meet,marriage`
 - **Support URL**: `https://tothemoon247.github.io/yentl/support.html` (hosted support page, contact `the.yona.app@gmail.com`)
