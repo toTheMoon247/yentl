@@ -26,7 +26,7 @@ marked **[YOU]**.
 - ✅ **Screenshots** captured (`~/Documents/Yentl App Store Screenshots`), incl. the pay-gate shot for the IAP review image.
 
 **Waiting / next up:**
-1. ⬜ **App-Specific Shared Secret** — App Information → *Manage* → generate → paste into the RevenueCat "Yentl App Store" app *(closes the last payments item; needed before sandbox purchase testing)*.
+1. ✅ **Payments fully wired** — RevenueCat "Yentl App Store" app now has the **In-App Purchase key** (`.p8` `SubscriptionKey_9MF9SK5BKZ`, Key ID `9MF9SK5BKZ`, Issuer `c4231410-…`) → "Valid credentials". (The In-App Purchase key, not the legacy App-Specific Shared Secret, is what StoreKit 2 needs.) *Optional later:* App Store Connect API key (auto-import products/prices — not needed since `match_unlock` was made manually) + Apple Server-to-Server notification URL.
 2. ⬜ **Digital Services Act** — currently marked *non-trader*; Yentl monetizes, so the **trader declaration** is needed for EU distribution.
 3. ⬜ **Version page** — description, keywords, screenshots (all drafted/captured: §3 + the screenshots folder).
 4. ⬜ **Build → TestFlight → submit** — version/build number → Archive → upload → test on device → submit app + IAP together (review notes §4 + demo account).
