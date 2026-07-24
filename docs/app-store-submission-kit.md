@@ -27,8 +27,8 @@ marked **[YOU]**.
 
 **Waiting / next up:**
 1. ✅ **Payments fully wired** — RevenueCat "Yentl App Store" app now has the **In-App Purchase key** (`.p8` `SubscriptionKey_9MF9SK5BKZ`, Key ID `9MF9SK5BKZ`, Issuer `c4231410-…`) → "Valid credentials". (The In-App Purchase key, not the legacy App-Specific Shared Secret, is what StoreKit 2 needs.) *Optional later:* App Store Connect API key (auto-import products/prices — not needed since `match_unlock` was made manually) + Apple Server-to-Server notification URL.
-2. ⬜ **Digital Services Act** — currently marked *non-trader*; Yentl monetizes, so the **trader declaration** is needed for EU distribution.
-3. ⬜ **Version page** — description, keywords, screenshots (all drafted/captured: §3 + the screenshots folder).
+2. ✅ **Digital Services Act — avoided for launch** by making the **27 EU countries unavailable** (Pricing and Availability → Availability). No trader declaration / no public personal details. Reversible: re-add the EU + complete the trader form later (needs a business entity or accepting public personal contact details). App price set to **Free** (monetized via the `match_unlock` IAP).
+3. ⬜ **Version page** — description, keywords, promo text, screenshots (all drafted/captured: §3 + the screenshots folder + `app-icon-1024.png`).
 4. ⬜ **Build → TestFlight → submit** — version/build number → Archive → upload → test on device → submit app + IAP together (review notes §4 + demo account).
 5. ⬜ **Legal review** of Terms/Privacy + fill placeholders (entity, address, governing law) before public launch.
 
