@@ -98,10 +98,10 @@ in-app via the onboarding age confirmation.
 
 - **App Name** (≤30): `Yentl` *(or `Yentl — Matchmaker Dating`, 25 chars, for search)*
 - **Subtitle** (≤30): `Real matchmakers, real dates`
-- **Promotional text** (≤170): `Skip the endless swiping. Yentl's professional matchmakers hand-pick your introductions — and you only pay when a real date is confirmed.`
+- **Promotional text** (≤170): `Skip the endless swiping. Yentl's professional matchmakers hand-pick your introductions — you unlock only the matches you both want.`
 - **Keywords** (≤100, comma-separated, no spaces):
   `matchmaker,dating,matchmaking,singles,relationships,serious dating,introductions,love,meet,marriage`
-- **Support URL** **[YOU]**: e.g. `https://yentl.app/support`
+- **Support URL**: `https://tothemoon247.github.io/yentl/support.html` (hosted support page, contact `the.yona.app@gmail.com`)
 - **Marketing URL** (optional) **[YOU]**
 - **Privacy Policy URL** **[YOU — REQUIRED]**: the ToS/Privacy from Slice 3 must be **publicly hosted** and linked here.
 
@@ -121,7 +121,7 @@ in-app via the onboarding age confirmation.
 >
 > **Why Yentl**
 > • Real matchmakers making thoughtful introductions.
-> • No pay-to-win subscriptions — you pay per confirmed date, nothing more.
+> • No pay-to-win subscriptions — you pay only to unlock a match you both want.
 > • Safety first: every profile is screened, and you can report, block, or
 >   delete your account anytime.
 >
